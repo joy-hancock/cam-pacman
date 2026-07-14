@@ -35,10 +35,8 @@ button:focus:not(:focus-visible) { outline: none; }
 /* Agent cards: outer accent ring sits outside the card border so it's
    clearly visible without competing with the card's own styling. */
 .agent-pick:focus-visible {
-  outline: 2px solid var(--accent-light);
-  outline-offset: 4px;
-  transform: translateY(-4px);
-  box-shadow: 0 10px 24px rgba(0,0,0,0.65);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--charcoal), 0 0 0 5px var(--accent-light), 0 6px 18px rgba(0,0,0,0.6);
 }
 
 
@@ -61,7 +59,6 @@ button:focus:not(:focus-visible) { outline: none; }
 
 body {
   min-height: 100vh;
-  overflow-x: hidden;
   background: radial-gradient(circle at 50% 20%, #2b2725, #0d0b0a 75%);
   display: flex;
   align-items: center;
@@ -118,6 +115,16 @@ body {
   color: var(--cream);
   text-shadow: 2px 0 var(--red-bright), -2px 0 var(--accent-light);
 }
+.marquee-agent {
+  display: block;
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(1rem, 2.5vw, 1.6rem);
+  letter-spacing: 0.12em;
+  color: var(--cream);
+  opacity: 0.9;
+  margin-top: 0.7em;
+}
+.marquee-agent.hidden { display: none; }
 
 .screen-frame {
   position: relative;
@@ -157,8 +164,23 @@ canvas {
   box-shadow: inset 0 0 40px 14px rgba(0,0,0,0.4);
 }
 
+.game-container {
+  position: relative;
+  width: 100%;
+}
+
 .game-area {
   width: 100%;
+}
+
+.screen-fade {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.screen-fade.visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .hud-bar {
@@ -196,15 +218,19 @@ canvas {
    constrained) parent. This is what actually fixes the mobile
    squeeze: this section can be as tall as it needs to be. */
 .select-screen {
+  position: absolute;
+  left: 0; right: 0;
+  top: 0; bottom: 0;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(0.7rem, 2vw, 1.1rem);
+  justify-content: center;
+  gap: clamp(0.5rem, 1.5vw, 0.9rem);
   text-align: center;
-  padding: clamp(1.4rem, 3.5vw, 2.2rem) clamp(0.8rem, 3vw, 1.6rem);
+  padding: clamp(0.6rem, 1.5vw, 1rem) clamp(0.8rem, 3vw, 1.6rem);
   background: #060505;
-  border-left: 3px solid #000;
-  border-right: 3px solid #000;
+  overflow-y: auto;
 }
 
 /* Show the right hint for the right input method instead of always
@@ -267,8 +293,8 @@ canvas {
 
 .select-title {
   font-family: 'Press Start 2P', monospace;
-  font-size: clamp(0.85rem, 2.2vw, 1.3rem);
-  letter-spacing: 0.05em;
+  font-size: clamp(1rem, 2.6vw, 1.6rem);
+  letter-spacing: 0.12em;
   color: var(--cream);
   text-shadow: 1.5px 0 var(--red-bright), -1.5px 0 var(--accent-light);
   margin-bottom: 0.2em;
@@ -291,18 +317,23 @@ canvas {
   padding: 0;
   cursor: pointer;
   box-shadow: 0 6px 18px rgba(0,0,0,0.6);
-  transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+  transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
 }
 .agent-pick:hover {
   background: rgba(255,255,255,0.08);
-  border-color: rgba(255,255,255,0.35);
+  border-color: rgba(255,255,255,0.6);
   transform: translateY(-4px);
   box-shadow: 0 10px 24px rgba(0,0,0,0.65);
+  transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+.agent-pick:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  transition: none;
 }
 .agent-pick.selected {
-  border-color: var(--accent-light);
-  background: rgba(255,255,255,0.1);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.55), 0 0 20px rgba(var(--accent-light-rgb), 0.5);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--charcoal), 0 0 0 5px var(--accent-light), 0 6px 18px rgba(0,0,0,0.6);
 }
 .agent-pick .agent-name {
   display: flex;
@@ -327,13 +358,14 @@ canvas {
 }
 
 .agent-preview {
-  height: 8em;
+  height: 11em;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.25em;
   overflow: hidden;
+  margin-top: 0.6em;
 }
 
 .overlay-title {
@@ -397,7 +429,9 @@ canvas {
   margin-top: 0.3em;
   animation: blink 1.4s steps(1) infinite;
 }
+.arcade-btn { transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease; }
 .arcade-btn:hover { transform: translateY(1px); box-shadow: 0 3px 0 #8f2c22; }
+.arcade-btn:active { transform: scale(0.95); box-shadow: 0 1px 0 #8f2c22; transition: none; }
 @keyframes blink {
   0%, 55% { opacity: 1; }
   56%, 100% { opacity: 0.55; }
@@ -464,10 +498,10 @@ canvas {
   touch-action: none;
   user-select: none;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.3s ease;
+  transition: background 0.2s ease, border-color 0.3s ease, transform 0.2s ease;
 }
 .dpad button:hover { background: rgba(var(--accent-light-rgb), 0.28); }
-.dpad button:active { background: rgba(var(--accent-light-rgb), 0.45); }
+.dpad button:active { background: rgba(var(--accent-light-rgb), 0.45); transform: scale(0.95); transition: none; }
 #dpad-up { --col: 2; --row: 1; }
 #dpad-left { --col: 1; --row: 2; }
 #dpad-right { --col: 3; --row: 2; }
@@ -482,7 +516,8 @@ canvas {
   border-radius: 6px;
   color: var(--cream);
   width: 100%;
-  padding: 0.8em 1.4em;
+  height: clamp(44px, 9vw, 58px);
+  padding: 0 1.4em;
   justify-content: center;
   cursor: pointer;
   touch-action: manipulation;
@@ -492,7 +527,7 @@ canvas {
   gap: 0.4em;
 }
 .pause-btn:hover { background: rgba(var(--accent-light-rgb), 0.28); }
-.pause-btn:active { background: rgba(var(--accent-light-rgb), 0.45); }
+.pause-btn:active { background: rgba(var(--accent-light-rgb), 0.45); transform: scale(0.95); transition: none; }
 .pause-btn:disabled {
   opacity: 0.35;
   cursor: default;
@@ -526,7 +561,7 @@ canvas {
   background: rgba(var(--accent-light-rgb), 0.14);
   border-color: var(--accent-light);
 }
-.game-action-btn:active { background: rgba(var(--accent-light-rgb), 0.28); }
+.game-action-btn:active { background: rgba(var(--accent-light-rgb), 0.28); transform: scale(0.95); transition: none; }
 
 /* Poster reveal modal — shown when a run ends. Lives outside the
    cabinet/screen-frame entirely (fixed to the viewport) so the full
@@ -580,7 +615,7 @@ canvas {
 .poster-modal-title {
   font-family: 'Press Start 2P', monospace;
   font-size: clamp(1rem, 3vw, 1.5rem);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.12em;
   color: var(--cream);
   text-shadow: 1.5px 0 var(--red-bright), -1.5px 0 var(--accent-light);
 }
@@ -593,6 +628,16 @@ canvas {
   object-fit: contain;
   border-radius: 6px;
   background: #000;
+  margin-top: 1.4em;
+}
+
+.poster-modal-agent {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(0.75rem, 2vw, 1.1rem);
+  letter-spacing: 0.1em;
+  color: var(--accent-light);
+  opacity: 0.9;
+  margin-top: 0.8em;
 }
 
 .poster-modal-stats {
@@ -616,20 +661,21 @@ canvas {
   font-family: 'Press Start 2P', monospace;
   font-size: clamp(0.6rem, 1.2vw, 0.8rem);
   letter-spacing: 0.04em;
+  line-height: 1.6;
   color: var(--accent-light);
   background: none;
   border: 2px solid var(--accent-light);
   border-radius: 4px;
   padding: 0.7em 1.1em;
   cursor: pointer;
-  margin-top: 0.5em;
+  margin-top: 1.4em;
   transition: background 0.2s ease, color 0.2s ease;
 }
 .poster-modal-change:hover {
   background: var(--accent-light);
   color: var(--black);
 }
-.poster-modal-change:active { transform: translateY(1px); }
+.poster-modal-change:active { transform: scale(0.95); transition: none; }
 
 
 .cabinet-footer {
@@ -660,25 +706,11 @@ canvas {
   <div class="marquee">
     <span class="marquee-sub">WORKFORCE RISK DIVISION ARCADE</span>
     <h1 class="marquee-title">CATCH THE CLUES</h1>
+    <span class="marquee-agent hidden" id="marquee-agent"></span>
   </div>
 
-  <!-- Character select lives on its own, sized by its content rather
-       than locked to the maze's 640:400 aspect ratio. That fixed ratio
-       is necessary for the maze itself (it has to stay proportional
-       to render correctly) but was the wrong container for a menu —
-       on narrow phones it squeezed everything into a short, cramped
-       box. This section is shown/hidden by JS alongside game state. -->
-  <div class="select-screen" id="select-screen">
-    <div class="select-title">SELECT YOUR AGENT</div>
-    <div class="agent-grid" id="agent-grid"></div>
-    <div class="agent-preview" id="agent-preview"></div>
-    <p class="overlay-instructions">FIND ALL 5 CASE FILES.<br>AVOID PATROLLING THREATS.<br>BEAT THE CLOCK.</p>
-    <button class="arcade-btn" id="start-btn" type="button">PRESS START</button>
-    <p class="overlay-controls kb-only">[ ARROWS / WASD — OR D-PAD ]<br>[ SPACE TO PAUSE ]</p>
-    <p class="overlay-controls touch-only">[ SWIPE OR TAP TO MOVE ]<br>[ USE THE PAUSE BUTTON TO PAUSE ]</p>
-  </div>
-
-  <div class="game-area hidden" id="game-area" tabindex="-1" aria-label="Game board — use arrow keys or WASD to move">
+  <div class="game-container">
+  <div class="game-area screen-fade" id="game-area" tabindex="-1" aria-label="Game board — use arrow keys or WASD to move">
     <div class="hud-bar">
       <div>SCORE<span id="score-val">0</span></div>
       <div>TIME<span id="time-val">60</span></div>
@@ -703,9 +735,10 @@ canvas {
         <p class="overlay-controls touch-only">[ TAP TO RESUME ]</p>
       </div>
     </div>
+
   </div>
 
-  <div class="controls-bar hidden" id="controls-bar">
+  <div class="controls-bar screen-fade" id="controls-bar">
     <div class="dpad">
       <button id="dpad-up" type="button" aria-label="Move up">&uarr;</button>
       <button id="dpad-left" type="button" aria-label="Move left">&larr;</button>
@@ -723,6 +756,17 @@ canvas {
     <p class="controls-hint touch-only">SWIPE OR TAP TO MOVE</p>
   </div>
 
+  <div class="select-screen screen-fade" id="select-screen">
+    <div class="select-title">SELECT YOUR AGENT</div>
+    <div class="agent-grid" id="agent-grid"></div>
+    <div class="agent-preview" id="agent-preview"></div>
+    <p class="overlay-instructions">FIND ALL 5 CASE FILES.<br>AVOID PATROLLING THREATS.<br>BEAT THE CLOCK.</p>
+    <button class="arcade-btn" id="start-btn" type="button">PRESS START</button>
+    <p class="overlay-controls kb-only">[ ARROWS / WASD — OR D-PAD ]<br>[ SPACE TO PAUSE ]</p>
+    <p class="overlay-controls touch-only">[ SWIPE OR TAP TO MOVE ]<br>[ USE THE PAUSE BUTTON TO PAUSE ]</p>
+  </div>
+  </div><!-- /.game-container -->
+
   <div class="cabinet-footer">CYBERSECURITY AWARENESS MONTH 2026 · ARCADE PROTOTYPE</div>
 </div>
 
@@ -735,6 +779,7 @@ canvas {
       <span>SCORE: <span id="poster-score">0</span></span>
       <span>CLUES: <span id="poster-clues">0/5</span></span>
     </div>
+    <div class="poster-modal-agent" id="poster-modal-agent"></div>
     <p class="poster-modal-tip" id="poster-modal-tip"></p>
     <button class="arcade-btn" id="poster-play-again" type="button">PLAY AGAIN</button>
     <button class="poster-modal-change" id="poster-change-agent" type="button"><i class="fa-solid fa-arrow-left"></i> CHOOSE A DIFFERENT AGENT</button>
@@ -768,18 +813,59 @@ function resizeCanvasForDisplay() {
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
 }
 
-const MAZE = [
-  "################",
-  "#..............#",
-  "#.####.##.####.#",
-  "#.#............#",
-  "#.#.#.######.#.#",
-  "#.#.#......#.#.#",
-  "#.#.#.#..#.#.#.#",
-  "#...#.#..#.#...#",
-  "#.###.#..#.###.#",
-  "################",
-];
+// Active maze — swapped per agent in resetGame()
+let MAZE = [];
+
+const MAZES = {
+  ghost: [
+    "################",
+    "#..............#",
+    "#.####.##.####.#",
+    "#.#............#",
+    "#.#.#.######.#.#",
+    "#.#.#......#.#.#",
+    "#.#.#.#..#.#.#.#",
+    "#...#.#..#.#...#",
+    "#.###.#..#.###.#",
+    "################",
+  ],
+  gadget: [
+    "################",
+    "#..............#",
+    "#.###.##.#####.#",
+    "#.#.......#....#",
+    "#.#.#####.#..#.#",
+    "#...#.....#....#",
+    "#.#.#.#.#.#.#..#",
+    "#.#...#.....#..#",
+    "#.#####.######.#",
+    "################",
+  ],
+  lk: [
+    "################",
+    "#..............#",
+    "#.##.##.##.###.#",
+    "#.#.......#....#",
+    "#.#.##.###.#.#.#",
+    "#...#.......#..#",
+    "#.###.#.#.#.#..#",
+    "#.#...#.#......#",
+    "#.#.###.####.#.#",
+    "################",
+  ],
+  scout: [
+    "################",
+    "#.....#....#...#",
+    "#.###.#.##.#.#.#",
+    "#.#...#..#...#.#",
+    "#.#.#####.###..#",
+    "#...#.....#....#",
+    "#.###.#.#.#.##.#",
+    "#.#...#.#......#",
+    "#...###.#####..#",
+    "################",
+  ],
+};
 
 function isWall(tx, ty) {
   if (tx < 0 || ty < 0 || tx >= COLS || ty >= ROWS) return true;
@@ -878,26 +964,9 @@ function buildAgentGrid() {
     btn.setAttribute('aria-label', 'Play as ' + agent.name);
     const nameColor = bannerTextColor(agent.accent);
     btn.innerHTML = `<span class="agent-name" style="background:${agent.accent};color:${nameColor}">${agent.name}</span><img src="${agent.badge}" alt="">`;
-    btn.addEventListener('click', () => { selectAgent(i); startGame(); });
-    // Also select on keyboard focus, so tabbing through the agents
-    // previews each one's theme/colors — same effect as clicking,
-    // without needing to activate. Guarded to keyboard focus (not
-    // mouse) so a click doesn't fire selectAgent twice.
+    btn.addEventListener('click', () => selectAgent(i));
     btn.addEventListener('focus', () => {
       if (btn.matches(':focus-visible')) selectAgent(i);
-    });
-    // Enter on a focused agent tile starts the game with that agent —
-    // "I've highlighted my pick, go." Handled on keydown so we can
-    // intercept Enter before the button's default click fires (which
-    // would otherwise just re-select the already-selected agent).
-    // Space is left to the normal button-activation path (select), so
-    // keyboard users can still tab-browse without committing.
-    btn.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.code === 'Enter') {
-        e.preventDefault();
-        selectAgent(i);
-        startGame();
-      }
     });
     grid.appendChild(btn);
   });
@@ -916,6 +985,8 @@ function selectAgent(i) {
     <p class="overlay-motto">"${agent.motto}"</p>
   `;
   applyTheme(agent);
+  MAZE = MAZES[agent.id] || MAZES.ghost;
+  if (state !== 'playing') renderIdleFrame();
 }
 
 const screenFrame = document.getElementById('screen-frame');
@@ -992,6 +1063,7 @@ function pixelPos(e) {
 }
 
 function resetGame() {
+  MAZE = MAZES[AGENTS[selectedAgentIndex].id] || MAZES.ghost;
   score = 0;
   lives = 3;
   timeLeft = 60;
@@ -1026,28 +1098,40 @@ function updatePauseBtn() {
     : '<i class="fa-solid fa-pause"></i><span>PAUSE</span>';
 }
 
+function fadeIn(el) {
+  el.classList.remove('hidden');
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('visible')));
+}
+function fadeOut(el, cb) {
+  el.classList.remove('visible');
+  el.addEventListener('transitionend', function handler() {
+    el.removeEventListener('transitionend', handler);
+    el.classList.add('hidden');
+    if (cb) cb();
+  }, { once: true });
+}
+
 function startGame() {
   resetGame();
   state = 'playing';
   paused = false;
-  selectScreen.classList.add('hidden');
-  gameArea.classList.remove('hidden');
-  controlsBar.classList.remove('hidden');
   posterModal.classList.remove('show');
   posterModal.setAttribute('aria-hidden', 'true');
   pauseOverlay.classList.add('hidden');
   applyTheme(AGENTS[selectedAgentIndex]);
+  const marqueeAgent = document.getElementById('marquee-agent');
+  marqueeAgent.textContent = '— ' + AGENTS[selectedAgentIndex].name + ' —';
+  marqueeAgent.classList.remove('hidden');
   srStatus.textContent = 'Game started as ' + AGENTS[selectedAgentIndex].name + '. Find all five case files before time runs out.';
-  lastTime = performance.now();
-  showTapHint();
   updatePauseBtn();
-  // Move focus onto the game area (tabindex=-1, so it's focusable but
-  // not in the tab sequence) rather than leaving it on the now-hidden
-  // start button. Movement/pause keys are handled at the document
-  // level, so resting focus on the non-actionable container avoids any
-  // accidental button activation during play.
-  gameArea.focus();
-  requestAnimationFrame(loop);
+  fadeOut(selectScreen, () => {
+    fadeIn(controlsBar);
+    updatePauseBtn();
+    lastTime = performance.now();
+    showTapHint();
+    gameArea.focus();
+    requestAnimationFrame(loop);
+  });
 }
 
 function togglePause() {
@@ -1067,6 +1151,7 @@ function endGame(won, reason) {
   posterCluesVal.textContent = cluesFound + '/5';
   posterModalTitle.textContent = won ? 'CASE CLOSED' : reason;
   posterModalTitle.className = 'poster-modal-title ' + (won ? 'win' : 'lose');
+  document.getElementById('poster-modal-agent').textContent = agent.name;
   posterModalImg.src = agent.badge;
   posterModalImg.alt = agent.name + ' poster';
   posterModalTip.textContent = agent.advice;
@@ -1184,20 +1269,15 @@ function returnToSelect() {
   posterModal.classList.remove('show');
   posterModal.setAttribute('aria-hidden', 'true');
   hideTapHint();
+  document.getElementById('marquee-agent').classList.add('hidden');
   state = 'ready';
   paused = false;
   pauseOverlay.classList.add('hidden');
   applyTheme(AGENTS[selectedAgentIndex]);
-  selectScreen.classList.remove('hidden');
-  gameArea.classList.add('hidden');
-  controlsBar.classList.add('hidden');
   updatePauseBtn();
+  controlsBar.classList.remove('visible');
   renderIdleFrame();
-  // Focus the currently-selected agent tile (not PRESS START). This
-  // anchors keyboard nav on the select screen AND means the next Tab
-  // moves to the following agent, so you can browse from where you
-  // left off. focusSelectedAgent() falls back gracefully if the grid
-  // isn't present.
+  fadeIn(selectScreen);
   focusSelectedAgent();
 }
 
@@ -1683,6 +1763,10 @@ function update(dt) {
 buildAgentGrid();
 resetGame();
 updatePauseBtn();
+gameArea.classList.add('visible');
+selectScreen.classList.add('visible');
+// controls-bar stays in layout from the start (no hidden class) so it
+// reserves its height — but invisible until the game begins
 function renderIdleFrame() {
   resizeCanvasForDisplay();
   drawMaze();
