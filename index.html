@@ -250,6 +250,13 @@ canvas {
   .dpad { display: none !important; }
   .controls-bar { justify-content: center; }
   .tap-hint.show { display: flex; }
+  /* Tapping an agent immediately starts the game on mobile, so the
+     agent-preview (name/motto) and move-instructions are not needed
+     on the select screen — hide them to prevent overflow. */
+  .agent-preview { display: none; }
+  .select-screen .touch-only.move-hint { display: none; }
+  /* Cap card image height so 4 cards fit without scrolling */
+  .agent-pick img { max-height: 28vw; object-fit: cover; object-position: top; }
 }
 
 /* Tap-to-play tutorial: a bouncing hand + expanding ripple shown
@@ -758,12 +765,13 @@ canvas {
 
   <div class="select-screen screen-fade" id="select-screen">
     <div class="select-title">SELECT YOUR AGENT</div>
+    <p class="overlay-controls touch-only" style="font-size: clamp(0.9rem, 3.5vw, 1.3rem); font-weight: bold; padding: 0.8em 0 0.4em;">TAP AN AGENT TO BEGIN</p>
     <div class="agent-grid" id="agent-grid"></div>
     <div class="agent-preview" id="agent-preview"></div>
     <p class="overlay-instructions">FIND ALL 5 CASE FILES.<br>AVOID PATROLLING THREATS.<br>BEAT THE CLOCK.</p>
-    <button class="arcade-btn" id="start-btn" type="button">PRESS START</button>
+    <button class="arcade-btn kb-only" id="start-btn" type="button">PRESS START</button>
     <p class="overlay-controls kb-only">[ ARROWS / WASD — OR D-PAD ]<br>[ SPACE TO PAUSE ]</p>
-    <p class="overlay-controls touch-only">[ SWIPE OR TAP TO MOVE ]<br>[ USE THE PAUSE BUTTON TO PAUSE ]</p>
+    <p class="overlay-controls touch-only move-hint">[ SWIPE OR TAP TO MOVE ]<br>[ USE THE PAUSE BUTTON TO PAUSE ]</p>
   </div>
   </div><!-- /.game-container -->
 
@@ -964,7 +972,12 @@ function buildAgentGrid() {
     btn.setAttribute('aria-label', 'Play as ' + agent.name);
     const nameColor = bannerTextColor(agent.accent);
     btn.innerHTML = `<span class="agent-name" style="background:${agent.accent};color:${nameColor}">${agent.name}</span><img src="${agent.badge}" alt="">`;
-    btn.addEventListener('click', () => selectAgent(i));
+    btn.addEventListener('click', () => {
+      selectAgent(i);
+      if (window.matchMedia('(hover: none), (pointer: coarse), (max-width: 600px)').matches) {
+        setTimeout(startGame, 350);
+      }
+    });
     btn.addEventListener('focus', () => {
       if (btn.matches(':focus-visible')) selectAgent(i);
     });
