@@ -651,57 +651,12 @@ canvas {
   overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
 }
 
-/* Rotate nudge — only shown on touch/mobile in portrait while playing */
-.rotate-nudge {
-  display: none;
-}
-@media (hover: none), (pointer: coarse), (max-width: 600px) {
-  .rotate-nudge {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5em;
-    background: rgba(var(--accent-light-rgb), 0.12);
-    border: 1px solid rgba(var(--accent-light-rgb), 0.3);
-    border-radius: 6px;
-    padding: 0.45em 0.8em;
-    font-family: 'Press Start 2P', monospace;
-    font-size: clamp(0.45rem, 2vw, 0.6rem);
-    color: var(--cream);
-    letter-spacing: 0.06em;
-    margin-bottom: 0.5rem;
-    transition: opacity 0.4s ease;
-  }
-  .rotate-nudge.hidden {
-    display: none;
-  }
-  .rotate-nudge-icon {
-    font-size: 1.4em;
-    flex-shrink: 0;
-  }
-  .rotate-nudge-close {
-    background: none;
-    border: none;
-    color: var(--cream);
-    opacity: 0.6;
-    cursor: pointer;
-    font-size: 1.3em;
-    padding: 0 0 0 0.4em;
-    line-height: 1;
-    flex-shrink: 0;
-  }
-  .rotate-nudge-close:hover { opacity: 1; }
-}
 </style>
 </head>
 <body>
 
 <div class="cabinet">
-  <div class="rotate-nudge hidden" id="rotate-nudge" aria-live="polite">
-    <span class="rotate-nudge-icon">&#8635;</span>
-    <span>ROTATE FOR BEST PLAY</span>
-    <button class="rotate-nudge-close" id="rotate-nudge-close" aria-label="Dismiss">&times;</button>
-  </div>
+
   <div class="marquee">
     <span class="marquee-sub">WORKFORCE RISK DIVISION ARCADE</span>
     <h1 class="marquee-title">CATCH THE CLUES</h1>
@@ -982,27 +937,6 @@ function isMobileInput() {
   return window.matchMedia('(hover: none), (pointer: coarse), (max-width: 600px)').matches;
 }
 
-// Rotate nudge — shown when game starts on mobile in portrait; hidden on
-// landscape or when player dismisses it manually.
-const rotateNudge = document.getElementById('rotate-nudge');
-let rotateNudgeDismissed = false;
-
-function isPortrait() {
-  return window.matchMedia('(orientation: portrait)').matches;
-}
-function updateRotateNudge() {
-  if (!isMobileInput() || rotateNudgeDismissed || state !== 'playing') {
-    rotateNudge.classList.add('hidden');
-  } else {
-    rotateNudge.classList.toggle('hidden', !isPortrait());
-  }
-}
-document.getElementById('rotate-nudge-close').addEventListener('click', () => {
-  rotateNudgeDismissed = true;
-  rotateNudge.classList.add('hidden');
-});
-window.addEventListener('orientationchange', updateRotateNudge);
-window.addEventListener('resize', updateRotateNudge);
 
 function showTapHint() {
   if (!isMobileInput()) return;
@@ -1106,7 +1040,6 @@ function startGame() {
   srStatus.textContent = 'Game started as ' + AGENTS[selectedAgentIndex].name + '. Find all five case files before time runs out.';
   lastTime = performance.now();
   showTapHint();
-  updateRotateNudge();
   updatePauseBtn();
   // Move focus onto the game area (tabindex=-1, so it's focusable but
   // not in the tab sequence) rather than leaving it on the now-hidden
@@ -1128,7 +1061,6 @@ function togglePause() {
 function endGame(won, reason) {
   state = 'gameover';
   hideTapHint();
-  rotateNudge.classList.add('hidden');
   const agent = AGENTS[selectedAgentIndex];
 
   posterScoreVal.textContent = Math.floor(score);
@@ -1252,8 +1184,6 @@ function returnToSelect() {
   posterModal.classList.remove('show');
   posterModal.setAttribute('aria-hidden', 'true');
   hideTapHint();
-  rotateNudge.classList.add('hidden');
-  rotateNudgeDismissed = false;
   state = 'ready';
   paused = false;
   pauseOverlay.classList.add('hidden');
