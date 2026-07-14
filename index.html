@@ -61,6 +61,7 @@ button:focus:not(:focus-visible) { outline: none; }
 
 body {
   min-height: 100vh;
+  overflow-x: hidden;
   background: radial-gradient(circle at 50% 20%, #2b2725, #0d0b0a 75%);
   display: flex;
   align-items: center;
@@ -1770,7 +1771,8 @@ renderIdleFrame();
 focusSelectedAgent();
 
 window.addEventListener('resize', () => {
-  if (state !== 'playing') renderIdleFrame();
+  if (state === 'playing') resizeCanvasForDisplay();
+  else renderIdleFrame();
 });
 
 </script>
