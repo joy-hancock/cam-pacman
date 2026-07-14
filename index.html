@@ -225,10 +225,10 @@ canvas {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: clamp(0.5rem, 1.5vw, 0.9rem);
   text-align: center;
-  padding: clamp(0.6rem, 1.5vw, 1rem) clamp(0.8rem, 3vw, 1.6rem);
+  padding: clamp(1.2rem, 3vw, 2rem) clamp(0.8rem, 3vw, 1.6rem);
   background: #060505;
   overflow-y: auto;
 }
@@ -324,14 +324,13 @@ canvas {
   padding: 0;
   cursor: pointer;
   box-shadow: 0 6px 18px rgba(0,0,0,0.6);
-  transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+  transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
 }
 .agent-pick:hover {
   background: rgba(255,255,255,0.08);
   border-color: rgba(255,255,255,0.6);
-  transform: translateY(-4px);
-  box-shadow: 0 10px 24px rgba(0,0,0,0.65);
-  transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.7);
+  transition: border-color 0.25s ease, background 0.25s ease;
 }
 .agent-pick:active {
   transform: scale(0.95);
@@ -340,7 +339,7 @@ canvas {
 }
 .agent-pick.selected {
   outline: none;
-  box-shadow: 0 0 0 3px var(--charcoal), 0 0 0 5px var(--accent-light), 0 6px 18px rgba(0,0,0,0.6);
+  box-shadow: 0 0 0 3px var(--charcoal), 0 0 0 5px var(--accent-light), 0 6px 0 rgba(0,0,0,0.7);
 }
 .agent-pick .agent-name {
   display: flex;
@@ -365,14 +364,18 @@ canvas {
 }
 
 .agent-preview {
-  height: 11em;
+  height: 7rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.25em;
   overflow: hidden;
   margin-top: 0.6em;
+}
+.agent-preview .overlay-title {
+  font-size: clamp(0.8rem, 1.8vw, 1.1rem);
+  white-space: nowrap;
 }
 
 .overlay-title {
@@ -768,7 +771,7 @@ canvas {
     <p class="overlay-controls touch-only" style="font-size: clamp(0.9rem, 3.5vw, 1.3rem); font-weight: bold; padding: 1.2em 0 0.4em;">TAP AN AGENT TO BEGIN</p>
     <div class="agent-grid" id="agent-grid"></div>
     <div class="agent-preview" id="agent-preview"></div>
-    <p class="overlay-instructions">FIND ALL 5 CASE FILES.<br>AVOID PATROLLING THREATS.<br>BEAT THE CLOCK.</p>
+    <p class="overlay-instructions" style="margin-top: 0.2em; margin-bottom: 0.8em;">FIND ALL 5 CASE FILES.<br>AVOID PATROLLING THREATS.<br>BEAT THE CLOCK.</p>
     <button class="arcade-btn kb-only" id="start-btn" type="button">PRESS START</button>
     <p class="overlay-controls kb-only">[ ARROWS / WASD — OR D-PAD ]<br>[ SPACE TO PAUSE ]</p>
     <p class="overlay-controls touch-only move-hint">[ SWIPE OR TAP TO MOVE ]<br>[ USE THE PAUSE BUTTON TO PAUSE ]</p>
