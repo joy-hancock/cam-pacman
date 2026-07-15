@@ -1,1004 +1,2046 @@
-<meta charset="UTF-8" /><meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0"
-/>
-<link
-  href="https://helpimg.s3.amazonaws.com/landing_pages/oops/styles.css"
-  rel="stylesheet"
-/>
-<title tkey="page-title"></title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title tkey="page-title">&nbsp;</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Special+Elite&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <script src="https://training.knowbe4.com/assets/application-b8fb25919f68be551e6730684a8ed34bc7dd2dac142e7cc51ebf7b09c48546d5.js"></script>
 <script src="https://training.knowbe4.com/packs/js/vendor-954761ad0dceb106b971.js"></script>
 <script src="https://training.knowbe4.com/assets/modernizr-79e0181ec91aff04bb01d87cba546535ede843f75d19f5c60f66b8dd6546971f.js"></script>
-<style type="text/css">
-  :root {
-    /* Custom variable that sets the theme color. Change the hex code value for a different theme color. */
-    --clr-accent: #ef4523;
-  }
-  /* Add custom styles below this line */
+<script src="https://kit.fontawesome.com/37c9b0d61f.js" crossorigin="anonymous"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Visible keyboard-focus indicator. Every interactive element (the
+   agent picker, PRESS START, D-pad, PAUSE, the modal buttons) is a
+   native <button>, so Enter/Space activation already works — but the
+   browser default outline is near-black and vanishes against the dark
+   cabinet, so it *looks* like keyboard nav is dead. :focus-visible
+   shows this ring only for keyboard focus, not mouse clicks, so it
+   doesn't add visual noise for pointer users. */
+:focus-visible {
+  outline: 3px solid var(--cream);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* Older engines without :focus-visible still get a clear ring */
+button:focus { outline: 3px solid var(--cream); outline-offset: 2px; }
+button:focus:not(:focus-visible) { outline: none; }
+
+/* The game board receives focus on start purely to anchor keyboard
+   nav inside the game — it's not an actionable control, so it doesn't
+   need (and shouldn't show) the focus ring. */
+#game-area:focus, #game-area:focus-visible { outline: none; }
+
+/* Agent cards: outer accent ring sits outside the card border so it's
+   clearly visible without competing with the card's own styling. */
+.agent-pick:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--charcoal), 0 0 0 5px var(--accent-light), 0 6px 18px rgba(0,0,0,0.6);
+}
+
+
+:root {
+  --teal: #1A9E9E;
+  --teal-dark: #0E7474;
+  --teal-light: #5ECFCF;
+  --cream: #F2ECD8;
+  --black: #131313;
+  --charcoal: #262422;
+  --red: #B33A2E;
+  --red-bright: #D64535;
+  /* Overridden at runtime by JS to match the selected agent's theme */
+  --accent: #1A9E9E;
+  --accent-dark: #0E7474;
+  --accent-light: #5ECFCF;
+  --accent-rgb: 26,158,158;
+  --accent-light-rgb: 94,207,207;
+}
+
+body {
+  min-height: 100vh;
+  background: radial-gradient(circle at 50% 20%, #2b2725, #0d0b0a 75%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(0.8rem, 3vw, 2rem);
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--cream);
+}
+
+.cabinet {
+  width: 100%;
+  max-width: min(94vw, 1100px);
+  background: linear-gradient(180deg, #1c1a19, #0f0e0d);
+  border-radius: clamp(10px, 2vw, 18px);
+  padding: clamp(1rem, 2.2vw, 2rem);
+  box-shadow:
+    0 0 0 2px rgba(var(--accent-light-rgb), 0.15),
+    0 20px 50px rgba(0,0,0,0.6),
+    inset 0 2px 0 rgba(255,255,255,0.04);
+  transition: box-shadow 0.4s ease;
+}
+
+.marquee {
+  text-align: center;
+  background: linear-gradient(160deg, var(--accent), var(--accent-dark));
+  border-radius: 8px 8px 0 0;
+  padding: clamp(0.6rem, 2vw, 1rem) 0.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.4s ease;
+}
+.marquee::before {
+  content: '';
+  position: absolute;
+  top: 4px; left: 0; right: 0;
+  height: 4px;
+  background-image: radial-gradient(circle, rgba(242,236,216,0.55) 1.5px, transparent 1.6px);
+  background-size: 14px 4px;
+  opacity: 0.8;
+}
+.marquee-sub {
+  display: block;
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(0.5rem, 1.1vw, 0.85rem);
+  letter-spacing: 0.08em;
+  color: var(--cream);
+  opacity: 0.85;
+  margin-bottom: 0.5em;
+}
+.marquee-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(1.1rem, 3.4vw, 2.6rem);
+  letter-spacing: 0.04em;
+  color: var(--cream);
+  text-shadow: 2px 0 var(--red-bright), -2px 0 var(--accent-light);
+}
+.marquee-agent {
+  display: block;
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(1rem, 2.5vw, 1.6rem);
+  letter-spacing: 0.12em;
+  color: var(--cream);
+  opacity: 0.9;
+  margin-top: 0.7em;
+}
+.marquee-agent.hidden { display: none; }
+
+.screen-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 640 / 400;
+  background: #060505;
+  overflow: hidden;
+  border-left: 3px solid #000;
+  border-right: 3px solid #000;
+  cursor: default;
+  touch-action: none;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.14) 0px,
+    rgba(0,0,0,0.14) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: multiply;
+}
+.vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 40px 14px rgba(0,0,0,0.4);
+}
+
+.game-container {
+  position: relative;
+  width: 100%;
+}
+
+.game-area {
+  width: 100%;
+}
+
+.screen-fade {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.screen-fade.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.hud-bar {
+  display: flex;
+  justify-content: space-between;
+  background: #000;
+  padding: clamp(6px, 1.5vw, 10px) clamp(10px, 2.5vw, 18px);
+  border-bottom: 2px solid rgba(var(--accent-light-rgb), 0.3);
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(0.55rem, 1.1vw, 0.95rem);
+  color: var(--cream);
+  text-shadow: 1px 0 var(--red-bright), -1px 0 var(--accent-light);
+}
+.hud-bar > div { text-align: center; line-height: 1.6; opacity: 0.9; }
+.hud-bar span { display: block; font-size: 1.25em; margin-top: 0.15em; }
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.35rem, 1.3vw, 0.6rem);
+  background: rgba(6,5,5,0.9);
+  text-align: center;
+  padding: clamp(0.8rem, 3vw, 1.6rem);
+}
+.overlay.hidden { display: none; }
+.hidden { display: none !important; }
+
+/* Character select — flows naturally with its own content height,
+   unlike .overlay above which is locked to fill its (aspect-ratio
+   constrained) parent. This is what actually fixes the mobile
+   squeeze: this section can be as tall as it needs to be. */
+.select-screen {
+  position: absolute;
+  left: 0; right: 0;
+  top: 0; bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: clamp(0.5rem, 1.5vw, 0.9rem);
+  text-align: center;
+  padding: clamp(1.2rem, 3vw, 2rem) clamp(0.8rem, 3vw, 1.6rem);
+  background: #060505;
+  overflow-y: auto;
+}
+
+/* Show the right hint for the right input method instead of always
+   showing keyboard-oriented copy to touch users (or vice versa).
+   Triggered on EITHER a touch-capable pointer OR a narrow/mobile-
+   sized screen — capability detection alone can misfire on some
+   tablets/hybrid devices, but "this is a small screen" is a much
+   more reliable signal that keyboard instructions don't apply. */
+.touch-only { display: none; }
+@media (hover: none), (pointer: coarse), (max-width: 600px) {
+  .kb-only { display: none; }
+  .touch-only { display: block; }
+  /* On mobile, tap-to-move on the maze replaces the D-pad entirely —
+     research suggests a mobile player's only expected input is touch
+     directly on the play area, so a separate directional pad is just
+     redundant clutter here (it stays for desktop mouse users). */
+  .dpad { display: none !important; }
+  .controls-bar { justify-content: center; }
+  .tap-hint.show { display: flex; }
+  /* Tapping an agent immediately starts the game on mobile, so the
+     agent-preview (name/motto) and move-instructions are not needed
+     on the select screen — hide them to prevent overflow. */
+  .agent-preview { display: none; }
+  .select-screen .touch-only.move-hint { display: none; }
+  /* Cap card image height so 4 cards fit without scrolling */
+  .agent-pick img { max-height: 28vw; object-fit: cover; object-position: top; }
+}
+
+/* Tap-to-play tutorial: a bouncing hand + expanding ripple shown
+   briefly after starting on mobile, teaching the tap-to-move
+   mechanic visually instead of relying on someone reading the hint
+   text. Dismissed on the player's first tap, or automatically after
+   a few seconds either way. */
+.tap-hint {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.tap-hint-hand {
+  font-size: clamp(2rem, 12vw, 3rem);
+  animation: tapBounce 1.1s ease-in-out infinite;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
+}
+.tap-hint-ripple {
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  border: 2px solid var(--accent-light);
+  border-radius: 50%;
+  animation: tapRipple 1.1s ease-out infinite;
+}
+@keyframes tapBounce {
+  0%, 100% { transform: translateY(-6px); }
+  50% { transform: translateY(6px); }
+}
+@keyframes tapRipple {
+  0% { transform: scale(0.4); opacity: 0.9; }
+  80%, 100% { transform: scale(1.6); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tap-hint-hand, .tap-hint-ripple { animation: none; }
+}
+
+.select-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(1rem, 2.6vw, 1.6rem);
+  letter-spacing: 0.12em;
+  color: var(--cream);
+  text-shadow: 1.5px 0 var(--red-bright), -1.5px 0 var(--accent-light);
+  margin-bottom: 0.2em;
+}
+
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: clamp(0.75rem, 2vw, 1.1rem);
+  width: 100%;
+  max-width: 900px;
+}
+.agent-pick {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255,255,255,0.04);
+  border: 2px solid rgba(255,255,255,0.45);
+  border-radius: 6px;
+  overflow: hidden;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+  transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+}
+.agent-pick:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.6);
+  box-shadow: 0 6px 0 rgba(0,0,0,0.7);
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+.agent-pick:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  transition: none;
+}
+.agent-pick.selected {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--charcoal), 0 0 0 5px var(--accent-light), 0 6px 0 rgba(0,0,0,0.7);
+}
+.agent-pick .agent-name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 3.4em;            /* keeps all four name bars equal height even when a longer name wraps */
+  padding: 0.5em 0.35em;
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(0.55rem, 1.4vw, 0.78rem);
+  letter-spacing: 0.02em;
+  text-align: center;
+  line-height: 1.35;
+  /* background + text colour are set per-agent inline (each agent's theme colour) */
+}
+.agent-pick img {
+  width: 100%;
+  height: auto;
+  display: block;
+  pointer-events: none;
+}
+
+.agent-preview {
+  height: 7rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.25em;
+  overflow: hidden;
+  margin-top: 0.6em;
+}
+.agent-preview .overlay-title {
+  font-size: clamp(0.8rem, 1.8vw, 1.1rem);
+  white-space: nowrap;
+}
+
+.overlay-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(1rem, 2.6vw, 1.9rem);
+  letter-spacing: 0.04em;
+  color: var(--cream);
+  text-shadow: 1.5px 0 var(--red-bright), -1.5px 0 var(--accent-light);
+}
+.overlay-title.win { color: var(--accent-light); text-shadow: 1.5px 0 var(--accent), -1.5px 0 var(--cream); }
+.overlay-title.lose { color: var(--red-bright); text-shadow: 1.5px 0 var(--red-bright), -1.5px 0 var(--red-bright); }
+
+.overlay-sub {
+  font-size: clamp(0.65rem, 1.4vw, 1rem);
+  letter-spacing: 0.14em;
+  color: var(--accent-light);
+}
+
+.overlay-motto {
+  font-family: 'Special Elite', monospace;
+  font-style: italic;
+  font-size: clamp(0.8rem, 1.6vw, 1.15rem);
+  max-width: 32ch;
+  opacity: 0.9;
+  line-height: 1.4;
+}
+
+.overlay-instructions {
+  font-size: clamp(0.7rem, 1.4vw, 1rem);
+  line-height: 1.7;
+  opacity: 0.9;
+}
+
+.overlay-score {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(0.7rem, 1.6vw, 1.05rem);
+  color: var(--cream);
+}
+.overlay-score span { color: var(--accent-light); }
+
+.overlay-tip {
+  font-family: 'Special Elite', monospace;
+  font-size: clamp(0.78rem, 1.5vw, 1.05rem);
+  max-width: 34ch;
+  opacity: 0.85;
+  line-height: 1.4;
+  margin-top: 0.2em;
+}
+
+.arcade-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(0.9rem, 1.8vw, 1.15rem);
+  letter-spacing: 0.06em;
+  background: var(--red-bright);
+  color: var(--cream);
+  border: none;
+  padding: 0.8em 1.4em;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #8f2c22;
+  margin-top: 0.3em;
+  animation: blink 1.4s steps(1) infinite;
+}
+.arcade-btn { transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease; }
+.arcade-btn:hover { transform: translateY(1px); box-shadow: 0 3px 0 #8f2c22; }
+.arcade-btn:active { transform: scale(0.95); box-shadow: 0 1px 0 #8f2c22; transition: none; }
+@keyframes blink {
+  0%, 55% { opacity: 1; }
+  56%, 100% { opacity: 0.55; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .arcade-btn { animation: none; }
+}
+
+.overlay-controls {
+  font-size: clamp(0.72rem, 1.5vw, 0.95rem);
+  opacity: 0.9;
+  margin-top: 0.3em;
+}
+
+/* On-screen movement controls — always visible, in their own
+   space below the screen so they can never overlap the maze or
+   the overlays. Works via touch OR mouse click, alongside
+   keyboard, so nobody is stuck without a way to move. */
+.controls-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.7rem, 2.5vw, 1.4rem);
+  padding-top: clamp(0.7rem, 2vw, 1.2rem);
+}
+.controls-hint {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(0.8rem, 1.8vw, 1.1rem);
+  letter-spacing: 0.08em;
+  color: var(--accent-light);
+  opacity: 0.75;
+  text-align: center;
+  flex-basis: 100%;
+  order: 3;
+}
+.pause-and-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: calc(2 * clamp(44px, 9vw, 58px) + 4px);
+}
+.pause-and-actions .game-actions {
+  flex: 1;
+  display: flex;
+}
+.pause-and-actions .game-action-btn {
+  flex: 1;
+}
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, clamp(44px, 9vw, 58px));
+  grid-template-rows: repeat(2, clamp(44px, 9vw, 58px));
+  gap: 4px;
+}
+.dpad button {
+  grid-column: var(--col);
+  grid-row: var(--row);
+  background: rgba(var(--accent-light-rgb), 0.16);
+  border: 1.5px solid var(--accent-light);
+  border-radius: 6px;
+  color: var(--cream);
+  font-size: clamp(1rem, 2.4vw, 1.3rem);
+  touch-action: none;
+  user-select: none;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.3s ease, transform 0.2s ease;
+}
+.dpad button:hover { background: rgba(var(--accent-light-rgb), 0.28); }
+.dpad button:active { background: rgba(var(--accent-light-rgb), 0.45); transform: scale(0.95); transition: none; }
+#dpad-up { --col: 2; --row: 1; }
+#dpad-left { --col: 1; --row: 2; }
+#dpad-right { --col: 3; --row: 2; }
+#dpad-down { --col: 2; --row: 2; }
+
+.pause-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(0.72rem, 1.5vw, 1rem);
+  letter-spacing: 0.08em;
+  background: rgba(var(--accent-light-rgb), 0.16);
+  border: 1.5px solid var(--accent-light);
+  border-radius: 6px;
+  color: var(--cream);
+  width: 100%;
+  height: clamp(44px, 9vw, 58px);
+  padding: 0 1.4em;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: opacity 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+}
+.pause-btn:hover { background: rgba(var(--accent-light-rgb), 0.28); }
+.pause-btn:active { background: rgba(var(--accent-light-rgb), 0.45); transform: scale(0.95); transition: none; }
+.pause-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Secondary mid-game actions (restart / change agent). Styled lighter
+   and smaller than PAUSE so they read as secondary options rather
+   than competing with the primary control. */
+.game-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-basis: 100%;
+  justify-content: center;
+  order: 4;
+}
+.game-action-btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(0.72rem, 1.6vw, 0.95rem);
+  letter-spacing: 0.08em;
+  background: transparent;
+  border: 1px solid rgba(var(--accent-light-rgb), 0.5);
+  border-radius: 5px;
+  color: var(--accent-light);
+  padding: 0.8em 1.4em;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.game-action-btn:hover {
+  background: rgba(var(--accent-light-rgb), 0.14);
+  border-color: var(--accent-light);
+}
+.game-action-btn:active { background: rgba(var(--accent-light-rgb), 0.28); transform: scale(0.95); transition: none; }
+
+/* Poster reveal modal — shown when a run ends. Lives outside the
+   cabinet/screen-frame entirely (fixed to the viewport) so the full
+   portrait poster has room to breathe instead of being squeezed into
+   the compact 640x400 arcade screen. */
+.poster-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1rem, 4vw, 2.5rem);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+}
+.poster-modal.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 0.25s ease;
+}
+.poster-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6,5,5,0.85);
+  backdrop-filter: blur(4px);
+}
+.poster-modal-card {
+  position: relative;
+  width: min(94vw, 420px);
+  max-height: 92vh;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #1c1a19, #100f0e);
+  border: 2px solid var(--accent-light);
+  border-radius: 10px;
+  padding: clamp(1rem, 3vw, 1.6rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5em;
+  text-align: center;
+  transform: scale(0.92) translateY(10px);
+  transition: transform 0.3s cubic-bezier(.2,1,.3,1);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+}
+.poster-modal.show .poster-modal-card { transform: scale(1) translateY(0); }
+
+.poster-modal-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(1rem, 3vw, 1.5rem);
+  letter-spacing: 0.25em;
+  color: var(--cream);
+  text-shadow: 1.5px 0 var(--red-bright), -1.5px 0 var(--accent-light);
+}
+.poster-modal-title.win { color: var(--accent-light); text-shadow: 1.5px 0 var(--accent), -1.5px 0 var(--cream); }
+.poster-modal-title.lose { color: var(--red-bright); text-shadow: 1.5px 0 var(--red-bright), -1.5px 0 var(--red-bright); }
+
+.poster-modal-img {
+  width: 100%;
+  max-height: 46vh;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #000;
+  margin-top: 0.5em;
+}
+
+.poster-modal-agent {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(0.75rem, 2vw, 1.1rem);
+  letter-spacing: 0.1em;
+  color: var(--accent-light);
+  opacity: 0.9;
+  margin-top: 0.8em;
+}
+
+.poster-modal-stats {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(0.65rem, 1.6vw, 0.85rem);
+  color: var(--cream);
+  display: flex;
+  gap: 1.2em;
+}
+.poster-modal-stats span { color: var(--accent-light); }
+
+.poster-modal-tip {
+  font-family: 'Special Elite', monospace;
+  font-size: clamp(0.75rem, 1.6vw, 0.9rem);
+  opacity: 0.85;
+  max-width: 32ch;
+  line-height: 1.4;
+}
+
+.poster-modal-change {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(0.6rem, 1.2vw, 0.8rem);
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+  color: var(--accent-light);
+  background: none;
+  border: 2px solid var(--accent-light);
+  border-radius: 4px;
+  padding: 0.7em 1.1em;
+  cursor: pointer;
+  margin-top: 1.4em;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.poster-modal-change:hover {
+  background: var(--accent-light);
+  color: var(--black);
+}
+.poster-modal-change:active { transform: scale(0.95); transition: none; }
+
+
+.cabinet-footer {
+  text-align: center;
+  font-size: clamp(0.62rem, 1.2vw, 0.85rem);
+  letter-spacing: 0.1em;
+  color: var(--accent-light);
+  opacity: 0.7;
+  padding-top: clamp(0.6rem, 2vw, 1.2rem);
+}
+
+.pause-btn i, .game-action-btn i, .poster-modal-change i {
+  font-size: 1em;
+  vertical-align: middle;
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+/* ============================================================
+   RTL SUPPORT
+   Activated when langAware() sets dir="rtl" on <html>.
+   Flexbox/Grid reverse automatically; these handle the rest.
+============================================================ */
+[dir="rtl"] .marquee,
+[dir="rtl"] .hud-bar,
+[dir="rtl"] .select-screen,
+[dir="rtl"] .overlay,
+[dir="rtl"] .poster-modal-card,
+[dir="rtl"] .controls-bar {
+  text-align: right;
+}
+
+[dir="rtl"] .poster-modal-stats {
+  flex-direction: row-reverse;
+}
+
+/* Flip the FA arrow icons on back-navigation buttons */
+[dir="rtl"] .poster-modal-change i,
+[dir="rtl"] #midgame-change-agent i {
+  transform: scaleX(-1);
+  display: inline-block;
+}
+
+/* Pause/action button group: reverse stacking order */
+[dir="rtl"] .game-actions {
+  flex-direction: row-reverse;
+}
+
 </style>
-<div class="container">
-  <header>
-    <img
-      src="https://helpimg.s3.us-east-1.amazonaws.com/kb4_logos/knowbe4-logo-black-orange-rgb.png"
-      alt="KnowBe4"
-    />
-  </header>
+</head>
+<body>
 
-  <main>
-    <svg
-      id="Layer_1"
-      style="enable-background: new 0 0 100 100"
-      version="1.1"
-      viewbox="0 0 100 100"
-      x="0px"
-      xml:space="preserve"
-      xmlns="http://www.w3.org/2000/svg"
-      xmlns:xlink="http://www.w3.org/1999/xlink"
-      y="0px"
-    >
-      <style type="text/css">
-        .st0 {
-          fill: var(--clr-accent);
-        }
-        .st1 {
-          fill-rule: evenodd;
-          clip-rule: evenodd;
-          fill: var(--clr-accent);
-        }
-      </style>
-      <g id="Page-1">
-        <g id="Group-6">
-          <g id="Group-5" transform="translate(6.000000, 0.000000)">
-            <path
-              class="st0"
-              d="M38.9,46.1c0-0.1,0-0.2,0-0.3V30.1l12,13.3h-5.5v1.2c0,0.5,0,1,0.1,1.4h11.3V22
-				c-3.3-1.4-5.5-4.6-5.5-8.3c0-4.9,4-8.9,8.9-8.9s8.9,4,8.9,8.9c0,3.8-2.4,7.1-5.9,8.4v23.9h16.9c2.3,0,4.1,1.8,4.1,4.1v37.1
-				c0,2.3-1.8,4.1-4.1,4.1H27.9c-2.3,0-4.1-1.8-4.1-4.1V50.2c0-2.3,1.8-4.1,4.1-4.1H38.9z M39.3,48.8H27.9c-0.8,0-1.4,0.6-1.4,1.4
-				v7.1l26.1,8.9l28.9-8.8v-7.1c0-0.8-0.6-1.4-1.4-1.4H46.5c0,0,0,0.1,0.1,0.1c1,1.7,2.5,2.6,4.1,2.6v0.1H52v6.6h-1.4
-				C45.1,58.2,40.6,54.2,39.3,48.8z M26.6,60.2v27.2c0,0.8,0.6,1.4,1.4,1.4h52.3c0.8,0,1.4-0.6,1.4-1.4V60.2l-29,8.9L26.6,60.2z
-				 M53.1,66.3l-0.4-0.1l-0.4,0.1L53.1,66.3z M60.6,20l1.1-0.2c2.8-0.6,4.8-3.1,4.8-6c0-3.4-2.8-6.2-6.2-6.2c-3.4,0-6.2,2.8-6.2,6.2
-				c0,2.8,1.9,5.2,4.5,6l1,0.3v25.9h1V20z M60.3,18.9c-2.8,0-5.2-2.3-5.2-5.2s2.3-5.2,5.2-5.2s5.2,2.3,5.2,5.2S63.1,18.9,60.3,18.9z
-				 M60.3,16.2c1.3,0,2.4-1.1,2.4-2.4s-1.1-2.4-2.4-2.4s-2.4,1.1-2.4,2.4S58.9,16.2,60.3,16.2z M49.3,54.2c-2-0.4-3.8-1.8-5-3.8
-				c-1-1.6-1.5-3.6-1.5-5.7v-4.2h1.8l-2.8-3.1v8.5c0,4.8,3.3,8.8,7.6,9.5V54.2z"
-              id="Combined-Shape"
-            ></path>
-            <g
-              id="Group-2"
-              transform="translate(9.500000, 25.000000) scale(-1, 1) translate(-9.500000, -25.000000) translate(0.000000, 14.000000)"
-            >
-              <path
-                class="st1"
-                d="M1.7,30.7c-0.5,0.5-1.4,0.5-1.9,0c-0.5-0.5-0.5-1.4,0-1.9l4.6-4.6c0.5-0.5,1.4-0.5,1.9,0
-					c0.5,0.5,0.5,1.4,0,1.9L1.7,30.7z"
-                id="Path"
-              ></path>
-              <path
-                class="st1"
-                d="M9.9,22.2c-0.5,0.5-1.4,0.5-1.9,0
-					c-0.5-0.5-0.5-1.4,0-1.9l2.9-2.9c0.5-0.5,1.4-0.5,1.9,0c0.5,0.5,0.5,1.4,0,1.9L9.9,22.2z"
-                id="Path_00000176761115796699632610000010488572513404880050_"
-              ></path>
-              <path
-                class="st1"
-                d="M5.2,39.4c-0.7,0.2-1.5-0.2-1.7-1
-					c-0.2-0.7,0.2-1.5,1-1.7l11.8-3.2c0.7-0.2,1.5,0.2,1.7,1c0.2,0.7-0.2,1.5-1,1.7L5.2,39.4z"
-                id="Path_00000171716399555547433380000015079852363039328931_"
-              ></path>
-              <path
-                class="st1"
-                d="M-4.9,23.9c-0.2,0.7-0.9,1.2-1.7,1
-					c-0.7-0.2-1.2-0.9-1-1.7l3.2-12.1c0.2-0.7,0.9-1.2,1.7-1c0.7,0.2,1.2,0.9,1,1.7L-4.9,23.9z"
-                id="Path_00000107578786399798457250000016369614116536095371_"
-              ></path>
-            </g>
-          </g>
-        </g>
-      </g>
-    </svg>
-    <span class="step-3 oops" tkey="oops">&nbsp;</span>
-    <h1 class="step-3" tkey="clicked">&nbsp;</h1>
+<div class="cabinet">
 
-    <h2 class="step-2" tkey="remember">&nbsp;</h2>
+  <div class="marquee">
+    <span class="marquee-sub" tkey="marquee-sub">&nbsp;</span>
+    <h1 class="marquee-title" tkey="marquee-title">&nbsp;</h1>
+    <span class="marquee-agent hidden" id="marquee-agent"></span>
+  </div>
 
-    <div class="cards">
-      <div class="card">
-        <h3 tkey="one">&nbsp;</h3>
+  <div class="game-container">
+  <div class="game-area screen-fade" id="game-area" tabindex="-1" aria-label="Game board — use arrow keys or WASD to move">
+    <div class="hud-bar">
+      <div>SCORE<span id="score-val">0</span></div>
+      <div>TIME<span id="time-val">60</span></div>
+      <div>CLUES<span id="clues-val">0/5</span></div>
+      <div>LIVES<span id="lives-val">●●●</span></div>
+    </div>
 
-        <p tkey="rule1">&nbsp;</p>
+    <div class="screen-frame" id="screen-frame">
+      <canvas id="game" width="640" height="400"></canvas>
+      <div class="scanlines" aria-hidden="true"></div>
+      <div class="vignette" aria-hidden="true"></div>
+
+      <div class="tap-hint" id="tap-hint" aria-hidden="true">
+        <div class="tap-hint-ripple"></div>
+        <div class="tap-hint-hand">&#9757;</div>
       </div>
 
-      <div class="card">
-        <h3 tkey="two">&nbsp;</h3>
-
-        <p tkey="rule2">&nbsp;</p>
-      </div>
-
-      <div class="card">
-        <h3 tkey="three">&nbsp;</h3>
-
-        <p tkey="rule3">&nbsp;</p>
+      <div class="overlay hidden" id="pause-overlay">
+        <div class="overlay-title" tkey="pause-overlay-title">&nbsp;</div>
+        <p class="overlay-instructions" tkey="overlay-instructions-pause">&nbsp;</p>
+        <p class="overlay-controls kb-only" tkey="pause-controls-kb">&nbsp;</p>
+        <p class="overlay-controls touch-only" tkey="pause-controls-touch">&nbsp;</p>
       </div>
     </div>
 
-    <p tkey="report">&nbsp;</p>
-  </main>
+  </div>
+
+  <div class="controls-bar screen-fade" id="controls-bar">
+    <div class="dpad">
+      <button id="dpad-up" type="button" aria-label="Move up">&uarr;</button>
+      <button id="dpad-left" type="button" aria-label="Move left">&larr;</button>
+      <button id="dpad-right" type="button" aria-label="Move right">&rarr;</button>
+      <button id="dpad-down" type="button" aria-label="Move down">&darr;</button>
+    </div>
+    <div class="pause-and-actions">
+      <button class="pause-btn" id="pause-btn" type="button" disabled><i class="fa-solid fa-pause"></i><span>PAUSE</span></button>
+      <div class="game-actions">
+        <button class="game-action-btn" id="midgame-restart" type="button">&#8635; RESTART</button>
+        <button class="game-action-btn" id="midgame-change-agent" type="button"><i class="fa-solid fa-arrow-left"></i> CHANGE AGENT</button>
+      </div>
+    </div>
+    <p class="controls-hint kb-only" tkey="controls-hint-kb">&nbsp;</p>
+    <p class="controls-hint touch-only" tkey="controls-hint-touch">&nbsp;</p>
+  </div>
+
+  <div class="select-screen screen-fade" id="select-screen">
+    <div class="select-title kb-only" tkey="select-title">&nbsp;</div>
+    <p class="overlay-controls touch-only" style="font-size: clamp(0.9rem, 3.5vw, 1.3rem); font-weight: bold; padding: 1.2em 0 0.4em;" tkey="tap-to-begin">&nbsp;</p>
+    <div class="agent-grid" id="agent-grid"></div>
+    <div class="agent-preview" id="agent-preview"></div>
+    <p class="overlay-instructions" style="margin-top: 0.2em; margin-bottom: 0.8em;" tkey="overlay-instructions-select">&nbsp;</p>
+    <button class="arcade-btn kb-only" id="start-btn" type="button" tkey="press-start">&nbsp;</button>
+    <p class="overlay-controls kb-only" tkey="select-controls-kb">&nbsp;</p>
+    <p class="overlay-controls touch-only move-hint" tkey="select-controls-touch">&nbsp;</p>
+  </div>
+  </div><!-- /.game-container -->
+
+  <div class="cabinet-footer" tkey="cabinet-footer">&nbsp;</div>
 </div>
 
-<footer>
-  <p class="step--1" tkey="disclaimer">&nbsp;</p>
-</footer>
+<div class="poster-modal" id="poster-modal" aria-hidden="true">
+  <div class="poster-modal-backdrop" id="poster-modal-backdrop"></div>
+  <div class="poster-modal-card" role="dialog" aria-modal="true" aria-labelledby="poster-modal-title">
+    <div class="poster-modal-title" id="poster-modal-title">CASE CLOSED</div>
+    <img class="poster-modal-img" id="poster-modal-img" src="" alt="">
+    <div class="poster-modal-stats">
+      <span>SCORE: <span id="poster-score">0</span></span>
+      <span>CLUES: <span id="poster-clues">0/5</span></span>
+    </div>
+    <div class="poster-modal-agent" id="poster-modal-agent"></div>
+    <p class="poster-modal-tip" id="poster-modal-tip"></p>
+    <button class="arcade-btn" id="poster-play-again" type="button" tkey="play-again-btn">&nbsp;</button>
+    <button class="poster-modal-change" id="poster-change-agent" type="button" tkey="choose-agent-btn">&nbsp;</button>
+  </div>
+</div>
+
+<div class="sr-only" role="status" aria-live="polite" id="sr-status"></div>
+
 <script charset="UTF-8">
   var translations = {};
 
-  var en_us =
-    '{ \
-				"language" : "English - United States",\
-				"language-code" : "en",\
-				"page-title" : "You clicked on a phishing test!",\
-				"oops" : "Oops!",\
-				"clicked" : "You clicked on a simulated phishing test!",\
-				"remember" : "Remember these three rules to stay safe online:",\
-				"one" : "1",\
-				"rule1" : "Always stop, look, and think before you click!",\
-				"two" : "2",\
-				"rule2" : "Check for red flags that indicate a phishing attack is happening.",\
-				"three" : "3",\
-				"rule3" : "Verify suspicious emails with the sender through a different medium.",\
-				"report" : "Remember: Always report suspicious emails to your supervisor or IT team. There are many ways that internet criminals will try to scam you. Stay alert—YOU are the last line of defense!",\
-				"disclaimer" : "Please Note: This message came from KnowBe4, Inc. Organizations that are referenced in the email message have no association with KnowBe4, Inc. and do not endorse the services of KnowBe4, Inc. The purpose of this message is to demonstrate how phishing attacks can appear to be legitimate emails from reputable companies.",\
-				"seiflags" : "Here are the red flags you missed:",\
-				"seiclick" : "Always think before you click!",\
-				"seihover" : "Hover over the red flags to see details:",\
-				"seitoggle" : "Toggle red flags"}';
-  var id_id =
-    '{ \
-				"language" : "Bahasa Indonesia",\
-				"language-code" : "id-id",\
-				"page-title" : "Anda mengeklik tes simulasi pengelabuan (phishing)!",\
-				"oops" : "Ups!",\
-				"clicked" : "Anda mengeklik tes simulasi pengelabuan (phishing)!",\
-				"remember" : "Ingat ketiga aturan ini agar tetap aman di internet:",\
-				"one" : "1",\
-				"rule1" : "Selalu berhenti, amati, dan pikirkan sebelum Anda mengeklik!",\
-				"two" : "2",\
-				"rule2" : "Periksa apakah ada tanda bahaya yang menunjukkan adanya serangan pengelabuan.",\
-				"three" : "3",\
-				"rule3" : "Hubungi pengirim melalui media yang berbeda jika Anda menerima email yang mencurigakan.",\
-				"report" : "Ingatlah: Selalu laporkan email mencurigakan kepada supervisor atau tim TI Anda. Penjahat di internet memiliki banyak cara untuk menipu Anda. Selalu waspada karena ANDA adalah garis pertahanan terakhir!",\
-				"disclaimer" : "Harap Dicatat: Pesan ini berasal dari KnowBe4, Inc. Perusahaan yang disebutkan dalam pesan email tidak memiliki hubungan dengan KnowBe4, Inc., serta tidak mendukung layanan KnowBe4, Inc. Tujuan pesan ini adalah memperagakan bagaimana serangan pengelabuan dapat tampak seperti email asli dari perusahaan ternama.",\
-				"seiflags" : "Berikut adalah tanda bahaya yang tidak Anda sadari:",\
-				"seiclick" : "Selalu berpikir dengan baik-baik sebelum mengeklik!",\
-				"seihover" : "Arahkan kursor ke atas tanda bahaya untuk melihat keterangan:",\
-				"seitoggle" : "Aktifkan tombol tanda bahaya"}';
-  var ms_my =
-    '{ \
-				"language" : "Bahasa Melayu",\
-				"language-code" : "ms-my",\
-				"page-title" : "Anda telah mengklik pada ujian simulasi pemancingan data (phishing)!",\
-				"oops" : "Oops!",\
-				"clicked" : "Anda telah mengklik pada ujian simulasi pemancingan data (phishing)!",\
-				"remember" : "Ingatlah ketiga-tiga peraturan ini untuk kekal selamat dalam talian:",\
-				"one" : "1",\
-				"rule1" : "Sentiasa berhenti, lihat dan fikir sebelum anda klik!",\
-				"two" : "2",\
-				"rule2" : "Semak bendera merah yang menunjukkan serangan pemancingan data sedang berlaku.",\
-				"three" : "3",\
-				"rule3" : "Sahkan e-mel yang mencurigakan dengan pengirim menerusi medium yang berbeza.",\
-				"report" : "Ingat: Sentiasa laporkan e-mel mencurigakan kepada penyelia atau pasukan IT anda. Terdapat banyak cara penjenayah Internet akan cuba menipu anda. Sentiasa berwaspada—ANDA ialah barisan akhir pertahanan!",\
-				"disclaimer" : "Harap Maklum: Mesej ini datang daripada KnowBe4, Inc. Organisasi yang dirujuk dalam mesej e-mel ini tidak mempunyai sebarang kaitan dengan KnowBe4, Inc. dan tidak menyokong perkhidmatan KnowBe4, Inc. Tujuan mesej ini ialah untuk menunjukkan bahawa serangan pemancingan data boleh kelihatan seperti e-mel yang sah daripada syarikat ternama.",\
-				"seiflags" : "Berikut ialah bendera merah yang anda terlepas:",\
-				"seiclick" : "Sentiasa fikir sebelum klik!",\
-				"seihover" : "Tuding kursor di atas bendera merah untuk melihat butiran:",\
-				"seitoggle" : "Togol bendera merah."}';
-  var cs_cz =
-    '{ \
-				"language" : "Čeština",\
-				"language-code" : "cs-cz",\
-				"page-title" : "Klikli jste na simulovaný phishingový test!",\
-				"oops" : "Jejda.",\
-				"clicked" : "Klikli jste na simulovaný phishingový test!",\
-				"remember" : "Zapamatujte si tato tři pravidla, jak zůstat na internetu v bezpečí:",\
-				"one" : "1",\
-				"rule1" : "Než na cokoli kliknete, vždy se zastavte, pozorně si zprávu přečtěte a zamyslete se.",\
-				"two" : "2",\
-				"rule2" : "Dávejte pozor na varovné příznaky, které by mohly ukazovat na phishingový útok.",\
-				"three" : "3",\
-				"rule3" : "Podezřelé e-maily si ověřte u odesilatele prostřednictvím jiného média.",\
-				"report" : "Nezapomeňte: Podezřelé e-maily vždy nahlaste nadřízenému nebo IT týmu. Internetoví zločinci se vás snaží podvést mnoha způsoby. Mějte se vždy na pozoru – jste v poslední obranné linii!",\
-				"disclaimer" : "Povšimněte si: Tato zpráva pochází od společnosti KnowBe4, Inc. Organizace, které jsou v e-mailu uvedeny, nijak nesouvisí se společností KnowBe4, Inc. ani nepropagují služby společnosti KnowBe4, Inc. Cílem této zprávy je ukázat, jak se phishingové útoky mohou jevit jako normální e-maily od seriózních společností.",\
-				"seiflags" : "Zde jsou varovné signály, které jste přehlédli:",\
-				"seiclick" : "Než kliknete, zamyslete se!",\
-				"seihover" : "Podrobnosti zobrazíte najetím myší na jednotlivé varovné signály:",\
-				"seitoggle" : "Přepnout varovné signály"}';
-  var da_dk =
-    '{ \
-				"language" : "Dansk",\
-				"language-code" : "da-dk",\
-				"page-title" : "Du har klikket på en simuleret phishing-test!",\
-				"oops" : "Ups!",\
-				"clicked" : "Du har klikket på en simuleret phishing-test!",\
-				"remember" : "Husk disse tre regler, der beskytter dig på nettet:",\
-				"one" : "1",\
-				"rule1" : "Vær altid opmærksom, og tænk dig om, før du klikker!",\
-				"two" : "2",\
-				"rule2" : "Hold øje med røde flag, der kan være et tegn på et muligt phishing-angreb.",\
-				"three" : "3",\
-				"rule3" : "Kontrollér mistænkelige e-mails hos afsenderen via et andet medie.",\
-				"report" : "Husk: Rapportér altid mistænkelige e-mails til din leder eller dit it-team. Der er mange måder, hvorpå internetkriminelle kan forsøge at bedrage dig. Vær opmærksom – DU er den sidste forsvarslinje!",\
-				"disclaimer" : "Bemærk: Denne besked er fra KnowBe4, Inc. Organisationer, der nævnes i denne e-mail, har ingen tilknytning til KnowBe4, Inc. og anbefaler ikke KnowBe4, Inc.&#39;s tjenester. Formålet med denne besked er at vise, hvordan phishing-angreb kan fremstå som ægte e-mails fra anerkendte firmaer.",\
-				"seiflags" : "Her er de advarselssignaler, du overså:",\
-				"seiclick" : "Tænk dig altid om, inden du klikker!",\
-				"seihover" : "Hold musen over advarselssignalerne for at få mere at vide::",\
-				"seitoggle" : "Slå advarselssignaler til"}';
-  var de_de =
-    '{ \
-				"language" : "Deutsch",\
-				"language-code" : "de-de",\
-			"page-title" : "Sie haben auf einen simulierten Phishing-Test geklickt!",\
-				"oops" : "Hoppla!",\
-				"clicked" : "Sie haben auf einen simulierten Phishing-Test geklickt!",\
-				"remember" : "Beachten Sie folgende drei Regeln, damit Ihre Onlinesicherheit stets gewährleistet ist:",\
-				"one" : "1",\
-				"rule1" : "Halten Sie inne, sehen Sie genau hin und denken Sie nach, bevor Sie klicken!",\
-				"two" : "2",\
-				"rule2" : "Suchen Sie nach Warnsignalen, die auf einen Phishing-Angriff hindeuten.",\
-				"three" : "3",\
-				"rule3" : "Überprüfen Sie verdächtige E-Mails, indem Sie sich über verifizierte Kontaktdaten an den Absender oder die Absenderin wenden.",\
-				"report" : "Bitte denken Sie daran: Melden Sie verdächtige E-Mails stets an Vorgesetzte oder das IT-Team. Cyberkriminelle versuchen auf zahlreiche Arten, Sie hinters Licht zu führen. Bleiben Sie wachsam: SIE sind die letzte Verteidigungslinie!",\
-				"disclaimer" : "Hinweis: Diese Nachricht ist von KnowBe4 GmbH. Die in dieser E-Mail-Nachricht genannten Unternehmen sind nicht mit der KnowBe4 GmbH verbunden und empfehlen nicht die Services der KnowBe4 GmbH. Ziel dieser Nachricht ist die Simulation eines Phishing-Versuchs, getarnt als authentische E-Mail von einer seriösen Organisation.",\
-				"seiflags" : "Diese Warnsignale sind Ihnen entgangen:",\
-				"seiclick" : "Klicken Sie nie unbedacht.",\
-				"seihover" : "Bewegen Sie den Mauszeiger auf die Warnsignale, um Einzelheiten anzuzeigen:",\
-				"seitoggle" : "Warnsignale einausblenden"}';
-  var en_au =
-    '{ \
-				"language" : "English (Australia)",\
-				"language-code" : "en-au",\
-			"page-title" : "You clicked on a simulated phishing test!",\
-				"oops" : "Oops!",\
-				"clicked" : "You clicked on a simulated phishing test!",\
-				"remember" : "Remember these three rules to stay safe online:",\
-				"one" : "1",\
-				"rule1" : "Always stop, look, and think before you click!",\
-				"two" : "2",\
-				"rule2" : "Check for red flags that indicate a phishing attack is happening.",\
-				"three" : "3",\
-				"rule3" : "Verify suspicious emails with the sender through a different medium.",\
-				"report" : "Remember: Always report suspicious emails to your supervisor or IT team. There are many ways that internet criminals will try to scam you. Stay alert—YOU are the last line of defence!",\
-				"disclaimer" : "Please Note: This message came from KnowBe4, Inc. Organisations that are referenced in the email message have no association with KnowBe4, Inc. and do not endorse the services of KnowBe4, Inc. The purpose of this message is to demonstrate how phishing attacks can appear to be legitimate emails from reputable companies.",\
-				"seiflags" : "Here are the red flags that you missed:",\
-				"seiclick" : "Always think before you click!",\
-				"seihover" : "Hover over the red flags to see details:",\
-				"seitoggle" : "Toggle red flags"}';
-  var en_gb =
-    '{ \
-				"language" : "English (Great Britain)",\
-				"language-code" : "en-gb",\
-				"page-title" : "You clicked on a simulated phishing test!",\
-				"oops" : "Oops!",\
-				"clicked" : "You clicked on a simulated phishing test!",\
-				"remember" : "Remember these three rules to stay safe online:",\
-				"one" : "1",\
-				"rule1" : "Always stop, look and think before you click!",\
-				"two" : "2",\
-				"rule2" : "Check for red flags that indicate a phishing attack is happening.",\
-				"three" : "3",\
-				"rule3" : "Verify suspicious emails with the sender through a different medium.",\
-				"report" : "Remember: Always report suspicious emails to your supervisor or IT team. There are many ways that internet criminals will try to scam you. Stay alert – YOU are the last line of defence!",\
-				"disclaimer" : "Please note: This message came from KnowBe4, Inc. Organisations that are referenced in the email message have no association with KnowBe4, Inc. and do not endorse the services of KnowBe4, Inc. The purpose of this message is to demonstrate how phishing attacks can appear to be legitimate emails from reputable companies.",\
-				"seiflags" : "Here are the red flags that you missed:",\
-				"seiclick" : "Always think before you click!",\
-				"seihover" : "Hover over the red flags to see details:",\
-				"seitoggle" : "Toggle red flags"}';
-  var es_419 =
-    '{ \
-				"language" : "Español (América Latina)",\
-				"language-code" : "es-419",\
-				"page-title" : "Ha hecho clic en una prueba de phishing simulada.",\
-				"oops" : "¡Uy!",\
-				"clicked" : "Ha hecho clic en una prueba de phishing simulada.",\
-				"remember" : "Recuerde estas tres reglas para mantenerse seguro en línea:",\
-				"one" : "1",\
-				"rule1" : "¡Siempre deténgase, mire bien y piense antes de hacer clic!",\
-				"two" : "2",\
-				"rule2" : "Compruebe las señales de alarma que indican que está ocurriendo un ataque de phishing.",\
-				"three" : "3",\
-				"rule3" : "Verifique los correos electrónicos sospechosos con el remitente a través de un medio diferente.",\
-				"report" : "Recuerde: Siempre informe a su supervisor o al equipo de TI sobre los correos electrónicos sospechosos. Los ciberdelincuentes pueden intentar estafarlo de diversas maneras. Manténgase alerta: ¡USTED es la última línea de defensa!",\
-				"disclaimer" : "Tenga en cuenta lo siguiente: Este mensaje provino de KnowBe4, Inc. Las organizaciones mencionadas en el mensaje de correo electrónico no tienen asociación con KnowBe4, Inc. y no apoyan los servicios de KnowBe4, Inc. El propósito de este mensaje es demostrar cómo los ataques de phishing pueden parecer ser correros electrónicos legítimos de empresas reconocidas.",\
-				"seiflags" : "Estas son las señales de alarma que pasó por alto:",\
-				"seiclick" : "¡Siempre piense antes de hacer clic!",\
-				"seihover" : "Pase el cursor sobre las señales de alarma para ver los detalles:",\
-				"seitoggle" : "Cambie las señales de alarma"}';
-  var es_es =
-    '{ \
-				"language" : "Español (España)",\
-				"language-code" : "es-es",\
-				"page-title" : "¡Ha hecho clic en una prueba de phishing simulada!",\
-				"oops" : "¡Vaya!",\
-				"clicked" : "¡Ha hecho clic en una prueba de phishing simulada!",\
-				"remember" : "Recuerde estas tres reglas para protegerse en línea:",\
-				"one" : "1",\
-				"rule1" : "Siempre deténgase, mire y piense antes de hacer clic en algo.",\
-				"two" : "2",\
-				"rule2" : "Busque señales de alerta que le indiquen que está sufriendo un ataque de phishing.",\
-				"three" : "3",\
-				"rule3" : "Verifique los correos electrónicos sospechosos con el remitente a través de otro medio.",\
-				"report" : "Recuerde: Denuncie siempre los correos electrónicos sospechosos a su supervisor o al equipo de TI. Los ciberdelincuentes intentarán estafarle de muchas maneras distintas. Permanezca alerta, USTED es la última línea de defensa.",\
-				"disclaimer" : "Nota: Este mensaje proviene de KnowBe4, Inc. Las organizaciones que se mencionan en el mensaje del correo electrónico no están vinculadas con KnowBe4, Inc. ni hacen propios los servicios de KnowBe4, Inc. El objetivo de este mensaje es demostrarle cómo los ataques de phishing pueden parecer correos legítimos de empresas con reputación.",\
-				"seiflags" : "Estas son las señales de alarma que ha pasado por alto:",\
-				"seiclick" : "¡Piense siempre antes de hacer clic!",\
-				"seihover" : "Pase el ratón por encima de las señales de alarma para consultar los detalles:",\
-				"seitoggle" : "Activar o desactivar señales de alarma"}';
-  var fr_ca =
-    '{ \
-				"language" : "Français (Canada)",\
-				"language-code" : "fr-ca",\
-				"page-title" : "Vous avez cliqué sur un test d’hameçonnage simulé!",\
-				"oops" : "Oups!",\
-				"clicked" : "Vous avez cliqué sur un test d’hameçonnage simulé!",\
-				"remember" : "N’oubliez pas ces trois règles pour assurer votre sécurité en ligne :",\
-				"one" : "1",\
-				"rule1" : "Arrêtez-vous, regardez et réfléchissez toujours avant de cliquer!",\
-				"two" : "2",\
-				"rule2" : "Surveillez la présence de signaux d’alarme qui indiquent que vous subissez une attaque par hameçonnage.",\
-				"three" : "3",\
-				"rule3" : "Vérifiez les courriels suspects auprès de leur expéditeur à l’aide d’un autre moyen de communication.",\
-				"report" : "Souvenez-vous : Signalez toujours les courriels suspects auprès de votre superviseur ou de votre équipe des TI. Les criminels de l’Internet tenteront de vous escroquer de multiples manières. Restez vigilant. VOUS êtes la dernière ligne de défense!",\
-				"disclaimer" : "Remarque : Ce message vous a été envoyé par KnowBe4, Inc. Les organisations mentionnées dans ce courriel ne sont aucunement associées à KnowBe4, Inc. et n’endossent pas les services de KnowBe4, Inc. Le but de ce message est de démontrer que les attaques par hameçonnage peuvent sembler être des courriels légitimes provenant d’entreprises jouissant d’une bonne réputation.",\
-				"seiflags" : "Voici les signaux d’alarme qui vous ont échappé :",\
-				"seiclick" : "Réfléchissez toujours avant de cliquer!",\
-				"seihover" : "Survolez les signaux d’alarme avec votre souris pour voir les détails :",\
-				"seitoggle" : "Afficher les signaux d’alarme"}';
-  var fr_fr =
-    '{ \
-				"language" : "Français (France)",\
-				"language-code" : "fr-fr",\
-				"page-title" : "Vous avez cliqué sur un test de simulation d’hameçonnage !",\
-				"oops" : "Oups !",\
-				"clicked" : "Vous avez cliqué sur un test de simulation d’hameçonnage !",\
-				"remember" : "N’oubliez pas ces trois règles de sécurité en ligne :",\
-				"one" : "1",\
-				"rule1" : "Vous devez toujours interrompre vos activités, vérifier et réfléchir avant de cliquer !",\
-				"two" : "2",\
-				"rule2" : "Vérifiez l’absence de signaux d’alarme indiquant qu’il s’agit d’une attaque par hameçonnage.",\
-				"three" : "3",\
-				"rule3" : "Vérifiez les e-mails suspects en contactant l’envoyeur par un autre moyen de communication.",\
-				"report" : "N’oubliez pas : Signalez toujours les e-mails suspects à votre superviseur ou équipe informatique. Les cybercriminels ne reculent devant rien pour vous escroquer. Soyez vigilant : VOUS êtes notre dernière ligne de défense.",\
-				"disclaimer" : "Remarque : Ce message provenait de KnowBe4, Inc. Les organisations référencées dans l’e-mail n’ont aucun lien avec KnowBe4, Inc. et ne sont en rien associées aux services de KnowBe4, Inc. L’objectif de ce message est de démontrer de quelle façon les attaques d’hameçonnage peuvent avoir l’air d’e-mails légitimes en provenance de sociétés respectables.",\
-				"seiflags" : "Voici les signaux d’alarme que vous avez manqués :",\
-				"seiclick" : "Réfléchissez toujours avant de cliquer !",\
-				"seihover" : "Déplacez le curseur sur les signaux d’alarme pour afficher les détails :",\
-				"seitoggle" : "Activer les signaux d’alarme"}';
-  var hu_hu =
-    '{ \
-				"language" : "Magyar",\
-				"language-code" : "hu-hu",\
-				"page-title" : "Szimulált adathalásztesztre kattintott!",\
-				"oops" : "Hoppá!",\
-				"clicked" : "Szimulált adathalásztesztre kattintott!",\
-				"remember" : "Ne feledkezzen meg az online biztonság három alapszabályáról!",\
-				"one" : "1",\
-				"rule1" : "Mindig álljon meg, vizsgálódjon és gondolkodjon, mielőtt kattintana!",\
-				"two" : "2",\
-				"rule2" : "Keresse az adathalász-támadásra figyelmeztető jeleket.",\
-				"three" : "3",\
-				"rule3" : "Ellenőrizze a gyanús e-maileket a feladónál egy másik csatornán keresztül.",\
-				"report" : "Emlékeztetőül: Mindig jelentse be a gyanús e-maileket a felettesének vagy az informatikai csapatnak. Az internetes bűnözők számos különböző módszerrel próbálhatják meg átverni. Mindig legyen éber, hiszen ÖN jelenti a végső védelmi vonalat!",\
-				"disclaimer" : "Fontos: Ezt az üzenetet a KnowBe4, Inc.-től kapta. Az e-mailben említett szervezetek semmilyen kapcsolatban nem állnak a KnowBe4, Inc.-kel, és nem támogatják a KnowBe4, Inc. szolgáltatásait. Az üzenet célja pusztán annak a bemutatása, hogyan tűnhet egy adathalász-támadás egy jó hírnevű vállalattól érkező, valós e-mailnek.",\
-				"seiflags" : "Íme azok a figyelmeztető jelek, amelyeket nem vett észre:",\
-				"seiclick" : "Mindig gondolkozzon, mielőtt kattint!",\
-				"seihover" : "A részletek megtekintéséhez vigye az egérmutatót az egyes figyelmeztető jelek fölé:",\
-				"seitoggle" : "Figyelmeztető jelek bekapcsolása"}';
-  var it_it =
-    '{ \
-				"language" : "Italiano",\
-				"language-code" : "it-it",\
-				"page-title" : "Hai fatto clic su un test di phishing simulato!",\
-				"oops" : "Ops!",\
-				"clicked" : "Hai fatto clic su un test di phishing simulato!",\
-				"remember" : "Ricorda le tre seguenti regole per la sicurezza online:",\
-				"one" : "1",\
-				"rule1" : "Fermati, guarda e rifletti sempre prima di fare clic!",\
-				"two" : "2",\
-				"rule2" : "Cerca i campanelli di allarme che potrebbero indicare un attacco di phishing.",\
-				"three" : "3",\
-				"rule3" : "In caso di sospetto, verifica la legittimità dell’e-mail contattando il mittente con un altro mezzo.",\
-				"report" : "Ricorda: segnala sempre le e-mail sospette al tuo superiore o team IT. I criminali informatici cercheranno di truffarti nei modi più imprevedibili. Stai all’erta: tu sei l’ultima linea di difesa!",\
-				"disclaimer" : "Nota: questo messaggio è stato inviato da KnowBe4, Inc. Le organizzazioni alle quali si fa riferimento nell’e-mail non hanno alcun legame con KnowBe4, Inc. e non avallano i servizi di KnowBe4, Inc. Lo scopo di questo messaggio è dimostrare che gli attacchi di phishing possono avere le sembianze di e-mail legittime da aziende rispettabili.",\
-				"seiflags" : "Questi sono i campanelli d’allarme che ti sono sfuggiti:",\
-				"seiclick" : "Rifletti sempre prima di fare clic!",\
-				"seihover" : "Passa il mouse sui campanelli d’allarme per maggiori dettagli:",\
-				"seitoggle" : "Mostra/Nascondi campanelli d’allarme"}';
-  var nl_nl =
-    '{ \
-				"language" : "Nederlands",\
-				"language-code" : "nl-nl",\
-				"page-title" : "U hebt op een gesimuleerde phishing-test geklikt",\
-				"oops" : "Oeps!",\
-				"clicked" : "U hebt op een gesimuleerde phishing-test geklikt",\
-				"remember" : "Onthoud deze drie regels om online veilig te blijven:",\
-				"one" : "1",\
-				"rule1" : "Stop, kijk en denk altijd na voordat u ergens op klikt!",\
-				"two" : "2",\
-				"rule2" : "Zoek naar rode vlaggen die op een phishingaanval kunnen duiden.",\
-				"three" : "3",\
-				"rule3" : "Controleer via een ander medium wie de afzender van de verdachte e-mails is.",\
-				"report" : "Denk eraan: Meld verdachte e-mails altijd bij uw leidinggevende of IT-afdeling. Internetcriminelen kunnen u op meerdere manieren oplichten. Blijf alert: U bent de laatste verdedigingslinie.",\
-				"disclaimer" : "Let op: Dit bericht was afkomstig van KnowBe4, Inc. De in het e-mailbericht genoemde organisaties zijn niet aan KnowBe4, Inc. gelieerd en steunen de diensten van KnowBe4, Inc. niet. Het doel van dit bericht is om aan te geven hoe phishingaanvallen op legitieme e-mails van gerenommeerde bedrijven kunnen lijken.",\
-				"seiflags" : "Dit zijn de rode vlaggen die u over het hoofd hebt gezien:",\
-				"seiclick" : "Denk altijd na voordat u ergens op klikt.",\
-				"seihover" : "Zweef over de rode vlaggen voor meer informatie:",\
-				"seitoggle" : "Klik op de rode vlaggen"}';
-  var nb_no =
-    '{ \
-				"language" : "Norsk",\
-				"language-code" : "nb-no",\
-				"page-title" : "Du klikket på en simulert phishingtest!",\
-				"oops" : "Oops!",\
-				"clicked" : "Du klikket på en simulert phishingtest!",\
-				"remember" : "Husk på disse tre reglene for å holde deg sikker på nett:",\
-				"one" : "1",\
-				"rule1" : "Stans, se og tenk deg om før du klikker på noe!",\
-				"two" : "2",\
-				"rule2" : "Sjekk varselstegnene som indikerer at en nettfiskingsangrep pågår.",\
-				"three" : "3",\
-				"rule3" : "Verifiser mistenkelige e-poster med avsenderen gjennom et annet medium.",\
-				"report" : "Husk: Rapporter alltid mistenkelige e-poster til lederen din eller IT-teamet. Det er mange måter nettkriminelle vil prøve å svindle deg på. Vær på vakt! DU er siste forsvarslinje.",\
-				"disclaimer" : "Merk: Dette beskjeden ble levert av KnowBe4, Inc. Organisasjoner som det refereres til i denne e-postmeldingen, har ingen assosiasjoner til KnowBe4, Inc. og støtter ikke tjenestene til KnowBe4, Inc. Formålet til denne meldingen er å demonstrere hvordan nettfiskingsangrep kan se ut som legitime e-poster fra respektable selskaper.",\
-				"seiflags" : "Her er de røde flaggene du ikke la merke til:",\
-				"seiclick" : "Tenk alltid før du klikker!",\
-				"seihover" : "Hold musepekeren over de røde flaggene for å se mer informasjon:",\
-				"seitoggle" : "Klikk på røde flagg"}';
-  var pl_pl =
-    '{ \
-				"language" : "Polski",\
-				"language-code" : "pl-pl",\
-				"page-title" : "Nie należało tego klikać! To symulacja ataku phishingowego",\
-				"oops" : "Ups!",\
-				"clicked" : "Nie należało tego klikać! To symulacja ataku phishingowego.",\
-				"remember" : "Zapamiętaj te trzy zasady bezpieczeństwa w sieci.",\
-				"one" : "1",\
-				"rule1" : "Zawsze daj sobie chwilę na analizę sytuacji, zanim coś klikniesz!",\
-				"two" : "2",\
-				"rule2" : "Rozglądaj się za sygnałami ostrzegawczymi, które mogą świadczyć o trwającym ataku phishingowym.",\
-				"three" : "3",\
-				"rule3" : "Autentyczność podejrzanych wiadomości e-mail weryfikuj u nadawcy, korzystając z innego środka komunikacji.",\
-				"report" : "Pamiętaj: Podejrzane e-maile zawsze zgłaszaj przełożonym lub zespołowi IT. Przestępcy w Internecie będą próbowali Cię oszukać na wiele sposobów. Zachowuj czujność — JESTEŚ ostatnią linią obrony!",\
-				"disclaimer" : "Uwaga: Ta wiadomość pochodzi od firmy KnowBe4, Inc. Organizacje przywoływane w wiadomości e-mail nie są powiązane z firmą KnowBe4, Inc. i nie zachęcają do korzystania z usług firmy KnowBe4, Inc. Celem tej wiadomości jest zademonstrowanie, że ataki phishingowe mogą wyglądać na autentyczne wiadomości e-mail od renomowanych firm.",\
-				"seiflags" : "Oto sygnały ostrzegawcze, które Ci umknęły:",\
-				"seiclick" : "Zawsze pomyśl, zanim klikniesz!",\
-				"seihover" : "Najedź kursorem na sygnał ostrzegawczy, żeby zobaczyć szczegóły.:",\
-				"seitoggle" : "Przełącz sygnały ostrzegawcze"}';
-  var pt_br =
-    '{ \
-				"language" : "Português (Brasil)",\
-				"language-code" : "pt-br",\
-				"page-title" : "Você clicou em um teste simulado de phishing!",\
-				"oops" : "Opa!",\
-				"clicked" : "Você clicou em um teste simulado de phishing!",\
-				"remember" : "Lembre-se destas três regras para se manter seguro online:",\
-				"one" : "1",\
-				"rule1" : "Sempre pare, olhe e pense antes de clicar!",\
-				"two" : "2",\
-				"rule2" : "Verifique os sinais de alerta que indicam que um ataque de phishing está acontecendo.",\
-				"three" : "3",\
-				"rule3" : "Verifique e-mails suspeitos com o remetente entrando em contato com ele por outro meio.",\
-				"report" : "Lembre-se: sempre denuncie e-mails suspeitos para o seu supervisor ou a equipe de TI. Existem muitas maneiras de os criminosos cibernéticos tentarem aplicar golpes em você. Fique alerta, pois VOCÊ é a última linha de defesa!",\
-				"disclaimer" : "Observação: Esta é uma mensagem da KnowBe4, Inc. As organizações que são mencionadas na mensagem de e-mail não têm associação com a KnowBe4, Inc. e não endossam os serviços da KnowBe4, Inc. O objetivo desta mensagem é demonstrar como os ataques de phishing podem parecer e-mails legítimos de empresas conceituadas.",\
-				"seiflags" : "Estes são os sinais de alerta que você não percebeu:",\
-				"seiclick" : "Sempre pense antes de clicar!",\
-				"seihover" : "Passe o cursor do mouse sobre os sinais de alerta para ver os detalhes:",\
-				"seitoggle" : "Ativar sinais de alerta"}';
-  var pt_pt =
-    '{ \
-				"language" : "Português (Portugal)", \
-				"language-code" : "pt-pt", \
-				"page-title" : "Clicou num teste de phishing simulado!",\
-				"oops" : "Opa!",\
-				"clicked" : "Clicou num teste de phishing simulado!",\
-				"remember" : "Nunca se esqueça destas três regras para se manter em segurança online:",\
-				"one" : "1",\
-				"rule1" : "Pare, olhe e pense sempre antes de clicar!",\
-				"two" : "2",\
-				"rule2" : "Procure sinais de alerta que denunciem um ataque de phishing.",\
-				"three" : "3",\
-				"rule3" : "Verifique e-mails suspeitos com o remetente através de outro meio.",\
-				"report" : "Lembre-se: Denuncie sempre e-mails suspeitos ao seu supervisor ou equipa de TI. Há um sem número de formas que os criminosos da Internet utilizarão para burlar as suas vítimas. Mantenha-se alerta. VOCÊ é a nossa última linha de defesa!",\
-				"disclaimer" : "Tenha em atenção: Esta mensagem veio da KnowBe4, Inc. As organizações referidas na mensagem de e-mail não estão associadas à KnowBe4, Inc. e não subscrevem os serviços da KnowBe4, Inc. O propósito desta mensagem é demonstrar como os ataques de phishing podem parecer vir de e-mails legítimos de empresas conceituadas.",\
-				"seiflags" : "Foram estes os sinais de alerta que lhe passaram despercebidos:",\
-				"seiclick" : "Pense sempre antes de clicar!",\
-				"seihover" : "Passe o rato sobre os sinais de alerta para ver detalhes:",\
-				"seitoggle" : "Alternar sinais de alerta"}';
-  var ro_ro =
-    '{ \
-				"language" : "Română",\
-				"language-code" : "ro-ro",\
-				"page-title" : "Ați făcut clic pe un test de phishing simulat!",\
-				"oops" : "Hopa!",\
-				"clicked" : "Ați făcut clic pe un test de phishing simulat!",\
-				"remember" : "Pentru a vă menține în siguranță online, nu uitați aceste trei reguli:",\
-				"one" : "1",\
-				"rule1" : "Întotdeauna opriți-vă, analizați și gândiți-vă bine înainte de a face clic!",\
-				"two" : "2",\
-				"rule2" : "Verificați dacă există semnale de alertă care indică faptul că este vorba despre un atac de phishing.",\
-				"three" : "3",\
-				"rule3" : "Verificați e-mailurile suspecte contactând expeditorul printr-o altă metodă de comunicare.",\
-				"report" : "Rețineți: Raportați întotdeauna e-mailurile suspecte supervizorului sau echipei IT. Există multe moduri prin care infractorii informatici încearcă să vă păcălească. Rămâneți vigilent(ă) – DVS: sunteți ultima linie de apărare!",\
-				"disclaimer" : "Rețineți: Acest mesaj provine de la KnowBe4, Inc. Organizațiile la care se face referire în mesajul e-mail nu au nicio asociere cu KnowBe4, Inc. și nu reprezintă o susținere a serviciilor oferite de KnowBe4, Inc. Scopul acestui mesaj este de a demonstra cum atacurile de phishing pot părea e-mailuri legitime, trimise de companii de renume.",\
-				"seiflags" : "Iată semnalele de alertă pe care le-ați ratat:",\
-				"seiclick" : "Întotdeauna gândiți-vă bine înainte de a face clic!",\
-				"seihover" : "Deplasați cursorul mouse-ului peste semnalele de alertă pentru a vedea detalii:",\
-				"seitoggle" : "Activați semnalele de alertă"}';
-  var fi_fi =
-    '{ \
-				"language" : "Suomi",\
-				"language-code" : "fi-fi",\
-				"page-title" : "Napsautit simuloitua verkkourkintatestiä!",\
-				"oops" : "Hups!",\
-				"clicked" : "Napsautit simuloitua verkkourkintatestiä!",\
-				"remember" : "Muista nämä kolme sääntöä, joilla pysyt turvassa verkossa:",\
-				"one" : "1",\
-				"rule1" : "Pysähdy aina ajattelemaan ennen kuin napsautat!",\
-				"two" : "2",\
-				"rule2" : "Etsi hälytysmerkkejä, jotka voivat kertoa verkkourkinnasta.",\
-				"three" : "3",\
-				"rule3" : "Tarkista epäilyttävät sähköpostiviestit lähettäjältä jollakin muulla keinolla.",\
-				"report" : "Muista: Ilmoita aina epäilyttävistä sähköposteista esimiehellesi tai IT-tiimillesi. Internet-rikolliset yrittävät huijata sinua monin tavoin. Pysy valppaana – SINÄ olet viimeinen puolustuslinja!",\
-				"disclaimer" : "Huomaa: Tämän viestin lähettäjä on KnowBe4, Inc. Sähköpostiviestissä mainituilla organisaatioilla ei ole mitään yhteyttä KnowBe4, Inc:iin tai KnowBe4, Inc:n tarjoamiin palveluihin. Tämän viestin tarkoitus on osoittaa, miten verkkourkintahyökkäykset voivat vaikuttaa luotettavien yhtiöiden lähettämiltä asiallisilta viesteiltä.",\
-				"seiflags" : "Tässä ovat punaiset hälytysmerkit, jotka jäivät huomaamatta:",\
-				"seiclick" : "Ajattele aina, ennen kuin napsautat!",\
-				"seihover" : "Siirrä hiiren osoitin hälytysmerkkien päälle saadaksesi lisätietoja:",\
-				"seitoggle" : "Valitse hälytysmerkit"}';
-  var sv_se =
-    '{ \
-				"language" : "Svenska",\
-				"language-code" : "sv-se",\
-				"page-title" : "Du klickade på ett simulerat nätfisketest!",\
-				"oops" : "Hoppsan",\
-				"clicked" : "Du klickade på ett simulerat nätfisketest!",\
-				"remember" : "Kom ihåg dessa tre regler för att navigera säkert på nätet:",\
-				"one" : "1",\
-				"rule1" : "Stanna upp, titta och tänk efter innan du klickar!",\
-				"two" : "2",\
-				"rule2" : "Titta efter varningssignaler som indikerar att en nätfiskeattack pågår.",\
-				"three" : "3",\
-				"rule3" : "Verifiera misstänkta e-postmeddelanden med avsändaren via någon annan kanal.",\
-				"report" : "Kom ihåg: Rapportera alltid misstänka e-postmeddelanden till din arbetsledare eller IT-teamet. Internetbrottslingarna försöker lura dig på många olika sätt. Var på din vakt – DU är det sista försvaret!",\
-				"disclaimer" : "Observera: Det här meddelandet kom från KnowBe4, Inc. Organisationerna som omnämns i e-postmeddelandet har ingen förbindelse med KnowBe4, Inc. och stöder inte KnowBe4, Inc:s tjänster. Syftet med det här meddelandet är att visa hur nätfiskeattacker kan framstå som legitima e-postmeddelanden från välrenommerade företag.",\
-				"seiflags" : "Här är varningssignalerna du missade:",\
-				"seiclick" : "Tänk alltid efter innan du klickar!",\
-				"seihover" : "För musen över varningssignalerna för att få mer information:",\
-				"seitoggle" : "Växla till varningssignaler"}';
-  var vi_vn =
-    '{ \
-				"language" : "Tiếng Việt",\
-				"language-code" : "vi-vn",\
-				"page-title" : "Bạn đã nhấp vào một bài kiểm tra về tình huống tấn công giả mạo mô phỏng!",\
-				"oops" : "Rất tiếc!",\
-				"clicked" : "Bạn đã nhấp vào một bài kiểm tra về tình huống tấn công giả mạo mô phỏng!",\
-				"remember" : "Hãy nhớ ba quy tắc giữ an toàn trực tuyến sau đây:",\
-				"one" : "1",\
-				"rule1" : "Luôn dừng lại, xem xét và suy nghĩ trước khi bạn nhấp chuột!",\
-				"two" : "2",\
-				"rule2" : "Kiểm tra các cảnh báo đỏ cho biết khả năng đang xảy ra cuộc tấn công giả mạo.",\
-				"three" : "3",\
-				"rule3" : "Xác minh email đáng ngờ với người gửi thông qua phương tiện khác.",\
-				"report" : "Xin lưu ý: Luôn báo cáo các email đáng ngờ cho người giám sát hoặc đội ngũ CNTT của bạn. Tội phạm mạng sẽ cố gắng lừa bạn theo nhiều cách. Hãy cảnh giác – BẠN chính là hàng phòng thủ cuối cùng!",\
-				"disclaimer" : "Xin lưu ý: Thư này đến từ KnowBe4, Inc. Các tổ chức được đề cập trong nội dung email không có bất kỳ sự liên kết nào với KnowBe4, Inc. cũng như không chứng thực các dịch vụ của KnowBe4, Inc. Mục đích của thư này là trình bày cách thức giả mạo email hợp lệ từ các công ty có uy tín trong các cuộc tấn công giả mạo.",\
-				"seiflags" : "Dưới đây là những dấu hiệu báo động bạn đã bỏ lỡ:",\
-				"seiclick" : "Hãy luôn cẩn trọng trước khi bạn nhấp chuột!",\
-				"seihover" : "Di chuột qua các dấu hiệu báo động để xem chi tiết:",\
-				"seitoggle" : "Nhấn vào dấu hiệu báo động"}';
-  var tr_tr =
-    '{ \
-				"language" : "Türkçe",\
-				"language-code" : "tr-tr",\
-				"page-title" : "Temsili bir kimlik avı testine tıkladınız!",\
-				"oops" : "Hak aksi!",\
-				"clicked" : "Temsili bir kimlik avı testine tıkladınız!",\
-				"remember" : "Çevrimiçi ortamda güvende kalmanın bu üç kuralını hatırlayın:",\
-				"one" : "1",\
-				"rule1" : "Tıklamadan önce durun, bakın ve düşünün!",\
-				"two" : "2",\
-				"rule2" : "Bir kimlik avı saldırısının gerçekleştiğine işaret eden tehlike işaretlerini arayın.",\
-				"three" : "3",\
-				"rule3" : "Farklı bir ortam yoluyla gönderen kişiye ulaşıp şüpheli e-postaları doğrulatın.",\
-				"report" : "Unutmayın: Şüpheli e-postaları her zaman amirinize veya BT ekibinize bildirin. İnternet suçluları sizi pek çok yolla dolandırmaya çalışabilirler. Tetikte olun, son savunma hattı SİZSİNİZ!",\
-				"disclaimer" : "Lütfen Dikkate Alın: Bu mesaj KnowBe4, Inc. şirketinden gelmiştir. E-posta mesajında adı geçen kuruluşların KnowBe4, Inc. ile hiçbir bağlantısı yoktur ve bu kuruluşlar KnowBe4, Inc. şirketinin hizmetlerine destek sunmamaktadır. Bu mesajın amacı, kimlik avı saldırılarının nasıl itibar sahibi şirketlerden gelen hakiki e-postalar gibi görünebildiğini göstermektir.",\
-				"seiflags" : "Gözünüzden kaçan tehlike işaretleri:",\
-				"seiclick" : "Tıklamadan önce mutlaka durun ve düşünün!",\
-				"seihover" : "Ayrıntıları görmek için tehlike işaretlerinin üzerine gelin:",\
-				"seitoggle" : "Tehlike işaretlerini açkapat"}';
-  var ru_ru =
-    '{ \
-				"language" : "Русский",\
-				"language-code" : "ru-ru",\
-				"page-title" : "Ссылка, по которой вы перешли, — имитация фишинговой атаки.",\
-				"oops" : "Ой!",\
-				"clicked" : "Ссылка, по которой вы перешли, — имитация фишинговой атаки.",\
-				"remember" : "Запомните три основных правила безопасности при работе в Интернете.",\
-				"one" : "1",\
-				"rule1" : "Прежде чем что-либо нажимать, остановитесь, посмотрите внимательно и подумайте.",\
-				"two" : "2",\
-				"rule2" : "Проверьте, нет ли в письме признаков фишинговой атаки.",\
-				"three" : "3",\
-				"rule3" : "Свяжитесь с предполагаемым отправителем письма другим способом и уточните, отправлял ли он его.",\
-				"report" : "Помните следующее: всегда сообщайте обо всех подозрительных письмах руководителю или ИТ-отделу. Мошенники знают много способов обмана людей в Интернете. Будьте бдительны, ведь вы — последняя линия обороны.",\
-				"disclaimer" : "Примечание. Это письмо отправлено компанией KnowBe4, Inc. Упомянутые в нем организации не имеют никакого отношения к KnowBe4, Inc. и не занимаются продвижением услуг KnowBe4, Inc. Цель этого сообщения — продемонстрировать, что письмо, якобы отправленное уважаемой компанией, может оказаться фишинговой атакой.",\
-				"seiflags" : "Вот признаки атаки, которые вы не заметили:",\
-				"seiclick" : "Всегда думайте, прежде чем щелкать!",\
-				"seihover" : "Наводите курсор на красные флажки, чтобы увидеть подробные сведения:",\
-				"seitoggle" : "Переключить красные флажки"}';
-  var uk_ua =
-    '{ \
-				"language" : "Українська",\
-				"language-code" : "uk-ua",\
-				"page-title" : "Ви натиснули на симульований тест із фішингу.",\
-				"oops" : "Ой!",\
-				"clicked" : "Ви натиснули на симульований тест із фішингу.",\
-				"remember" : "Запам’ятайте зазначені нижче три правила.",\
-				"one" : "1",\
-				"rule1" : "Обов’язково зупиніться, подивіться й подумайте, перш ніж переходити за посиланням.",\
-				"two" : "2",\
-				"rule2" : "Шукайте червоні прапорці, що вказують на фішингову атаку.",\
-				"three" : "3",\
-				"rule3" : "Перевіряйте підозрілі електронні листи, звернувшись до відправника іншим способом.",\
-				"report" : "Пам’ятайте: Завжди повідомляйте про підозрілі електронні листи своєму керівнику або ІТ-відділу. Існує багато способів, якими зловмисники намагатимуться обманути вас в інтернеті. Будьте напоготові, адже ВИ — остання лінія захисту!",\
-				"disclaimer" : "Зверніть увагу! Це повідомлення надіслано компанією KnowBe4, Inc. Організації, про які йдеться в повідомленні, не пов’язані з компанією KnowBe4, Inc. і не рекламують її послуги. Мета повідомлення — ознайомити користувачів із фішинговими атаками, замаскованими під листи від відомих компаній.",\
-				"seiflags" : "Ось червоні прапорці, які ви пропустили.",\
-				"seiclick" : "Завжди думайте, перш ніж натискати!",\
-				"seihover" : "Наведіть курсор на червоні прапорці, щоб побачити деталі.",\
-				"seitoggle" : "Перейти до червоних прапорців"}';
+  var en_us = '{\
+    "language": "English - United States",\
+    "language-code": "en",\
+    "language-dir": "ltr",\
+    "page-title": "Catch the Clues — Workforce Risk Division Arcade",\
+    "marquee-sub": "WORKFORCE RISK DIVISION ARCADE",\
+    "marquee-title": "CATCH THE CLUES",\
+    "select-title": "SELECT YOUR AGENT",\
+    "tap-to-begin": "TAP AN AGENT TO BEGIN",\
+    "overlay-instructions-select": "FIND ALL 5 CASE FILES.<br>AVOID PATROLLING THREATS.<br>BEAT THE CLOCK.",\
+    "press-start": "PRESS START",\
+    "select-controls-kb": "[ ARROWS / WASD — OR D-PAD ]<br>[ SPACE TO PAUSE ]",\
+    "select-controls-touch": "[ SWIPE OR TAP TO MOVE ]<br>[ USE THE PAUSE BUTTON TO PAUSE ]",\
+    "pause-overlay-title": "PAUSED",\
+    "overlay-instructions-pause": "TIME AND THREATS ARE FROZEN.",\
+    "pause-controls-kb": "[ SPACE / TAP TO RESUME ]",\
+    "pause-controls-touch": "[ TAP TO RESUME ]",\
+    "pause-btn": "PAUSE",\
+    "resume-btn": "RESUME",\
+    "midgame-restart": "RESTART",\
+    "midgame-change-agent": "CHANGE AGENT",\
+    "controls-hint-kb": "TOUCH, CLICK, ARROWS,<br>OR WASD TO MOVE · SPACE TO PAUSE",\
+    "controls-hint-touch": "SWIPE OR TAP TO MOVE",\
+    "hud-score": "SCORE",\
+    "hud-time": "TIME",\
+    "hud-clues": "CLUES",\
+    "hud-lives": "LIVES",\
+    "poster-score-label": "SCORE:",\
+    "poster-clues-label": "CLUES:",\
+    "case-closed": "CASE CLOSED",\
+    "caught": "CAUGHT!",\
+    "times-up": "TIME\'S UP",\
+    "play-again-btn": "PLAY AGAIN",\
+    "choose-agent-btn": "CHOOSE A DIFFERENT AGENT",\
+    "cabinet-footer": "CYBERSECURITY AWARENESS MONTH 2026 · ARCADE PROTOTYPE",\
+    "agent-ghost-name": "THE GHOST",\
+    "agent-ghost-category": "PHISHING / SOCIAL ENGINEERING",\
+    "agent-ghost-motto": "Trust, but verify... then verify again.",\
+    "agent-ghost-advice": "If an email creates a false sense of urgency, it\'s probably a trap.",\
+    "agent-gadget-name": "GADGET",\
+    "agent-gadget-category": "AI THREATS / SAFETY",\
+    "agent-gadget-motto": "Keep your tools sharp and your mind sharper.",\
+    "agent-gadget-advice": "Use a code word with family or colleagues to verify identity during suspicious \\"urgent\\" calls.",\
+    "agent-lk-name": "LOCK N KEY",\
+    "agent-lk-category": "DATA SECURITY / PASSWORDS",\
+    "agent-lk-motto": "[REDACTED]",\
+    "agent-lk-advice": "Your password shouldn\'t be a word; it should be a story only you know.",\
+    "agent-scout-name": "SCOUT",\
+    "agent-scout-category": "INCIDENT REPORTING",\
+    "agent-scout-motto": "If it walks like a data breach and talks like a data breach; you better tell someone.",\
+    "agent-scout-advice": "If you see something, say something.",\
+    "sr-game-started": "Game started. Find all five case files before time runs out.",\
+    "sr-paused": "Game paused.",\
+    "sr-resumed": "Game resumed."\
+  }';
 
-  var hi_in =
-    '{ \
-				"language" : "हिंदी",\
-		    "language-code" : "hi-in",\
-		    "page-title" : "आपने सिम्युलेट किए गए फ़िशिंग टेस्ट पर क्लिक कर दिया!",\
-				"oops" : "अरे नहीं!",\
-				"clicked" : "आपने सिम्युलेट किए गए फ़िशिंग टेस्ट पर क्लिक कर दिया!",\
-				"remember" : "ऑनलाइन सुरक्षित रहने के ये तीन नियम याद रखें:",\
-				"one" : "1",\
-				"rule1" : "पहले रुकें, देखें, और फिर सोचने-समझने के बाद ही क्लिक करें!",\
-				"two" : "2",\
-				"rule2" : "खतरों के उन संकेतों को देखें जिनसे पता चलता है कि कोई फ़िशिंग हमला हो रहा है।",\
-				"three" : "3",\
-				"rule3" : "संदिग्ध ईमेल को उसे भेजने वाले से सत्यापति करें। सत्यापन के लिए ईमेल के बजाय कोई और तरीका इस्तेमाल करें।",\
-				"report" : "याद रखें: हमेशा अपने निरीक्षक या IT टीम को संदिग्ध ईमेल की रिपोर्ट करें। ऐसे कई सारे तरीके हैं जिनसे इंटरनेट पर मौजूद अपराधी आपके साथ धोखाधड़ी करने की कोशिश करेंगे। सावधान रहें—आप बचाव के लिए अंतिम पंक्ति हैं!",\
-				"disclaimer" : "कृपया नोट करें: यह मैसेज KnowBe4, Inc. ने भेजा है। ईमेल में जिन संगठनों का ज़िक्र आया है वे KnowBe4, Inc. से किसी भी तरह से जुड़े हुए नहीं हैं और वे KnowBe4, Inc. की सेवाओं का समर्थन नहीं करते। इस मैसेज का मकसद यह दिखाना है कि कैसे फ़िशिंग हमले, जानी-मानी कंपनियों से आए हुए वैध ईमेल के रूप में दिखाई पड़ सकते हैं।",\
-				"seiflags" : "ये हैं वे खतरे के संकेत जिन्हें आपने नहीं पहचाना:",\
-				"seiclick" : "क्लिक करने से पहले हमेशा सोचें!",\
-				"seihover" : "खतरे के संकेतों पर माउस घुमाकर विवरण देखें:",\
-				"seitoggle" : "खतरे के संकेतों को टॉगल करें"}';
-  var th_th =
-    '{ \
-				"language" : "ไทย",\
-		    "language-code" : "th-th",\
-		    "page-title" : "คุณคลิกบททดสอบฟิชชิ่งจำลอง!",\
-				"oops" : "ขออภัย!",\
-				"clicked" : "คุณคลิกบททดสอบฟิชชิ่งจำลอง!",\
-				"remember" : "โปรดจำกฎการออนไลน์อย่างปลอดภัย 3 ประการดังนี้",\
-				"one" : "1",\
-				"rule1" : "หยุด ดู และคิดก่อนคลิกทุกครั้ง!",\
-				"two" : "2",\
-				"rule2" : "ตรวจสอบธงแดง (Red Flag) ที่บ่งชี้ถึงการโจมตีแบบฟิชชิ่ง",\
-				"three" : "3",\
-				"rule3" : "หากพบอีเมลน่าสงสัย ให้ตรวจสอบกับผู้ส่งผ่านทางช่องทางอื่น",\
-				"report" : "โปรดจำไว้ว่า: ต้องรายงานอีเมลที่น่าสงสัยต่อหัวหน้างานหรือทีม IT เสมอ อาชญากรในอินเทอร์เน็ตมีวิธีการมากมายที่จะใช้หลอกลวงคุณ คุณจึงต้องระมัดระวังอยู่เสมอ เพราะคุณคือปราการด่านสุดท้าย!",\
-				"disclaimer" : "โปรดทราบ: ข้อความนี้มาจาก KnowBe4, Inc. องค์กรที่อ้างอิงในข้อความอีเมลไม่มีความเกี่ยวข้องกับ KnowBe4, Inc. และไม่ได้สนับสนุนบริการของ KnowBe4, Inc. วัตถุประสงค์ของข้อความนี้เพื่อแสดงตัวอย่างวิธีการโจมตีแบบฟิชชิ่ง โดยปลอมแปลงอีเมลให้เหมือนว่ามาจากบริษัทที่มีชื่อเสียงจริง",\
-				"seiflags" : "ธงแดงที่คุณพลาดไปมีดังนี้",\
-				"seiclick" : "คิดก่อนจะคลิกเสมอ!",\
-				"seihover" : "เลื่อนเมาส์ไปวางเหนือธงแดงเพื่อดูรายละเอียด",\
-				"seitoggle" : "เปิด/ปิดธงแดง"}';
-  var ko_kr =
-    '{ \
-				"language" : "한국어",\
-				"language-code" : "ko-kr",\
-				"page-title" : "피싱 사기 테스트 시뮬레이션을 클릭하셨습니다!",\
-				"oops" : "이런!",\
-				"clicked" : "피싱 사기 테스트 시뮬레이션을 클릭하셨습니다!",\
-				"remember" : "온라인상에서 사기를 피할 수 있는 법칙 3가지를 명심하세요.",\
-				"one" : "1",\
-				"rule1" : "항상 멈추고, 살펴보고, 생각하세요.",\
-				"two" : "2",\
-				"rule2" : "피싱 공격을 나타내는 적신호를 확인하세요.",\
-				"three" : "3",\
-				"rule3" : "다른 매체를 통해 보낸 사람과 수상한 이메일을 확인하세요.",\
-				"report" : "다음 사항들을 명심하세요. 의심스러운 이메일은 항상 상사나 IT 팀에 보고하세요. 인터넷 범죄자는 다양한 수법으로 사기를 시도합니다. 경계를 늦추지 마세요. 여러분은 마지막 방어선입니다!",\
-				"disclaimer" : "유의: 이 메시지는 KnowBe4, Inc.에서 보낸 것입니다. 이메일 메시지에서 언급된 명칭은 KnowBe4, Inc.와 관련이 없으며 KnowBe4, Inc.의 서비스를 보증하지 않습니다. 이 메시지는 어떻게 피싱 공격이 유명 기업에서 보낸 적법한 이메일로 보일 수 있는지 예시하기 위한 것입니다.",\
-				"seiflags" : "놓친 적신호는 다음과 같습니다.",\
-				"seiclick" : "항상 클릭하기 전에 생각하세요!",\
-				"seihover" : "자세한 내용을 확인하려면 적신호 위로 마우스 커서를 가져가세요.",\
-				"seitoggle" : "적신호 토글"}';
-  var ja_jp =
-    '{ \
-				"language" : "日本語",\
-				"language-code" : "ja-jp",\
-				"page-title" : "危険なリンクをクリックし、フィッシングテストで不合格になりました。",\
-				"oops" : "残念！",\
-				"clicked" : "危険なリンクをクリックし、フィッシングテストで不合格になりました。",\
-				"remember" : "この3つの「安全なオンラインを維持するためのルール」を覚えていてください",\
-				"one" : "1",\
-				"rule1" : "かならず動作を止め、状況をよく観察し、考えてからクリックします。",\
-				"two" : "2",\
-				"rule2" : "フィッシング攻撃であることを示唆するレッドフラグを確認します。",\
-				"three" : "3",\
-				"rule3" : "不審なメールであれば、送信者をメール以外の方法で確認します。",\
-				"report" : "重要なポイント：攻撃が疑われる行動については必ず上司やITチームに報告してください。サイバー犯罪者がユーザーを騙す手口は、ますます巧妙化しています。常に警戒を怠らないでください。あなたは最後の防衛線です。",\
-				"disclaimer" : "ご注意ください：このメールは、KnowBe4から模擬フィッシング攻撃演習のために発信されたものです。ここで参照されている企業または組織はKnowBe4は関連はなく、KnowBe4社のサービスを裏書きするものではありません。本メールの目的は、本物さながらのフィッシング攻撃をシミュレーションすることで、フィッシング攻撃が有名な企業からの正規のメールのごとく発信されていることを実際にデモすることです。",\
-				"seiflags" : "見逃したレッドフラグ：",\
-				"seiclick" : "クリックする前には必ずよく考えましょう。",\
-				"seihover" : "レッドフラグの上にマウスを移動して、詳細を確認してください。",\
-				"seitoggle" : "レッドフラッグの切り替え"}';
-  var zh_cn =
-    '{ \
-				"language" : "简体中文",\
-				"language-code" : "zh-cn",\
-				"page-title" : "您点击了一个模拟的网络钓鱼测试！",\
-				"oops" : "糟糕！",\
-				"clicked" : "您点击了一个模拟的网络钓鱼测试！",\
-				"remember" : "请牢记以下三条“安全网络使用法则”：",\
-				"one" : "1",\
-				"rule1" : "点击之前，务必先停下，查看，思考！",\
-				"two" : "2",\
-				"rule2" : "寻找是否存在暗示网络钓鱼攻击的危险信号。",\
-				"three" : "3",\
-				"rule3" : "使用其他方式联系发件人，核实可疑电子邮件的真实性。",\
-				"report" : "请牢记：务必向您的主管或 IT 团队报告可疑电子邮件。网络犯罪分子总会千方百计地欺骗您。保持警惕——您是最后一道防线！",\
-				"disclaimer" : "请注意：本邮件来自 KnowBe4, Inc.。电子邮件中使用的组织名称与 KnowBe4, Inc. 无任何关系，且不对 KnowBe4, Inc. 的服务承担任何责任。该邮件的目的是展示网络钓鱼攻击如何伪装成知名公司发送的真实邮件。",\
-				"seiflags" : "以下是您遗漏的危险信号：",\
-				"seiclick" : "点击之前务必三思！",\
-				"seihover" : "将鼠标悬停在危险信号上，查看详细信息：",\
-				"seitoggle" : "打开危险信号切换开关"}';
-  var zh_hk =
-    '{ \
-				"language" : "繁體中文（香港）",\
-				"language-code" : "zh-hk",\
-				"page-title" : "您點擊了一個模擬的網絡釣魚測試！",\
-				"oops" : "糟糕！",\
-				"clicked" : "您點擊了一個模擬的網絡釣魚測試！",\
-				"remember" : "保證上網安全，請謹記以下三條規則：",\
-				"one" : "1",\
-				"rule1" : "點擊之前停下來，看一看，想一想！",\
-				"two" : "2",\
-				"rule2" : "檢查是否有受網絡釣魚攻擊的危險信號。",\
-				"three" : "3",\
-				"rule3" : "透過其他方式與寄件者聯繫，確認可疑電郵是否屬實。",\
-				"report" : "請記住：請務必向您的主管或 IT 團隊報告可疑電郵。互聯網罪犯會試圖透過多種方式欺騙您。保持警惕——您是最後一道防線！",\
-				"disclaimer" : "請注意：本訊息來自 KnowBe4, Inc.。電郵訊息所提及的組織與 KnowBe4, Inc. 並無關係，亦不為 KnowBe4, Inc. 之服務提供代言。此郵件僅用於展示網絡釣魚如何偽裝成來自可靠公司的真實電子郵件。",\
-				"seiflags" : "以下是您沒有發現的危險信號：",\
-				"seiclick" : "擊前請先想一想！",\
-				"seihover" : "將滑鼠懸停在危險信號上可查看詳細資訊：",\
-				"seitoggle" : "標記危險信號"}';
-  var zh_tw =
-    '{ \
-				"language" : "繁體中文（台灣）",\
-				"language-code" : "zh-tw",\
-				"page-title" : "您點擊了一個模擬的網路釣魚測試！",\
-				"oops" : "糟糕！",\
-				"clicked" : "您點擊了一個模擬的網路釣魚測試！",\
-				"remember" : "請記住以下三個規則，以確保線上安全：",\
-				"one" : "1",\
-				"rule1" : "點擊前，務必停下來，看一看，想一想！",\
-				"two" : "2",\
-				"rule2" : "檢查是否有網路釣魚攻擊的危險信號。",\
-				"three" : "3",\
-				"rule3" : "透過不同媒介與寄件者確認可疑電子郵件。",\
-				"report" : "請記住：請務必向您的主管或 IT 團隊報告可疑電子郵件。網際網路犯罪者會試圖透過多種方式欺騙您。保持警惕——您是最後一道防線！",\
-				"disclaimer" : "請注意：此郵件來自 KnowBe4, Inc.電子郵件中引用的組織與 KnowBe4, Inc. 沒有關聯，亦不認可 KnowBe4, Inc. 所提供的服務。此郵件的目的是展示網路釣魚攻擊如何偽裝成來自知名公司的合法電子郵件。",\
-				"seiflags" : "以下是您沒有發現的危險信號：",\
-				"seiclick" : "在按一下之前，務必三思！",\
-				"seihover" : "將游標停留在危險信號上可查看詳細資料：",\
-				"seitoggle" : "切換危險信號"}';
-
-  //English (US)
   translations['en-US'] = en_us;
   translations['en'] = en_us;
   translations['en-us'] = en_us;
 
-  //Indonesian
+  // Indonesian — test locale (all strings set to "Test" to verify language detection)
+  var id_id = '{\
+    "language": "Indonesian",\
+    "language-code": "id",\
+    "language-dir": "ltr",\
+    "page-title": "Test",\
+    "marquee-sub": "Test",\
+    "marquee-title": "Test",\
+    "select-title": "Test",\
+    "tap-to-begin": "Test",\
+    "overlay-instructions-select": "Test",\
+    "press-start": "Test",\
+    "select-controls-kb": "Test",\
+    "select-controls-touch": "Test",\
+    "pause-overlay-title": "Test",\
+    "overlay-instructions-pause": "Test",\
+    "pause-controls-kb": "Test",\
+    "pause-controls-touch": "Test",\
+    "pause-btn": "Test",\
+    "resume-btn": "Test",\
+    "midgame-restart": "Test",\
+    "midgame-change-agent": "Test",\
+    "controls-hint-kb": "Test",\
+    "controls-hint-touch": "Test",\
+    "hud-score": "Test",\
+    "hud-time": "Test",\
+    "hud-clues": "Test",\
+    "hud-lives": "Test",\
+    "poster-score-label": "Test",\
+    "poster-clues-label": "Test",\
+    "case-closed": "Test",\
+    "caught": "Test",\
+    "times-up": "Test",\
+    "play-again-btn": "Test",\
+    "choose-agent-btn": "Test",\
+    "cabinet-footer": "Test",\
+    "agent-ghost-name": "Test",\
+    "agent-ghost-category": "Test",\
+    "agent-ghost-motto": "Test",\
+    "agent-ghost-advice": "Test",\
+    "agent-gadget-name": "Test",\
+    "agent-gadget-category": "Test",\
+    "agent-gadget-motto": "Test",\
+    "agent-gadget-advice": "Test",\
+    "agent-lk-name": "Test",\
+    "agent-lk-category": "Test",\
+    "agent-lk-motto": "Test",\
+    "agent-lk-advice": "Test",\
+    "agent-scout-name": "Test",\
+    "agent-scout-category": "Test",\
+    "agent-scout-motto": "Test",\
+    "agent-scout-advice": "Test",\
+    "sr-game-started": "Test",\
+    "sr-paused": "Test",\
+    "sr-resumed": "Test"\
+  }';
   translations['id'] = id_id;
   translations['id-ID'] = id_id;
 
-  //Malaysian
-  translations['ms'] = ms_my;
-  translations['ms-MY'] = ms_my;
-
-  //Czech
-  translations['cs'] = cs_cz;
-  translations['cs-CZ'] = cs_cz;
-
-  //German
-  translations['de'] = de_de;
-  translations['de-DE'] = de_de;
-  translations['de-AT'] = de_de; // Austria
-  translations['de-CH'] = de_de; // Switzerland
-
-  //Danish
-  translations['da'] = da_dk;
-  translations['da-DK'] = da_dk;
-
-  //English (Australia)
-  translations['en-AU'] = en_au;
-  translations['en-au'] = en_au;
-
-  //English (UK)
-  translations['en-GB'] = en_gb;
-  translations['en-gb'] = en_gb;
-  translations['en-IE'] = en_gb; // Ireland
-  translations['en-ZA'] = en_gb; // South Africa
-
-  //Spanish (Latin America)
-  translations['es-419'] = es_419;
-  translations['es'] = es_419; // Default Spanish to Latin America
-  translations['es-MX'] = es_419; // Mexico
-  translations['es-AR'] = es_419; // Argentina
-  translations['es-CO'] = es_419; // Columbia
-  translations['es-CL'] = es_419; // Chile
-  translations['es-HN'] = es_419; // Honduras
-  translations['es-PE'] = es_419; // Peru
-  translations['es-UY'] = es_419; // Uruguay
-  translations['es-VE'] = es_419; // Venezuela
-  translations['es-CR'] = es_419; // Costa Rica
-
-  //Spanish (Spain)
-  translations['es-ES'] = es_es;
-  translations['es-es'] = es_es;
-
-  //French (Canada)
-  translations['fr-CA'] = fr_ca;
-  translations['fr-ca'] = fr_ca;
-
-  //French (France)
-  translations['fr-FR'] = fr_fr;
-  translations['fr-fr'] = fr_fr;
-  translations['fr'] = fr_fr; // Default French to France
-  translations['fr-BE'] = fr_fr; // Belgium
-  translations['fr-CH'] = fr_fr; // Switzerland
-
-  //Hungarian
-  translations['hu'] = hu_hu;
-  translations['hu-HU'] = hu_hu;
-
-  //Italian
-  translations['it-IT'] = it_it;
-  translations['it-it'] = it_it;
-  translations['it'] = it_it;
-  translations['it-CH'] = it_it; // Switzerland
-
-  //Dutch
-  translations['nl'] = nl_nl;
-  translations['nl-NL'] = nl_nl;
-  translations['nl-BE'] = nl_nl; // Belgium
-
-  //Norwegian
-  translations['no'] = nb_no;
-  translations['nb'] = nb_no;
-  translations['nb-NO'] = nb_no; // Bokmål
-  translations['nn'] = nb_no; // Nynorsk
-  translations['nn-NO'] = nb_no; // Nynorsk
-
-  //Polish
-  translations['pl'] = pl_pl;
-  translations['pl-PL'] = pl_pl;
-
-  //Portuguese (Brazil)
-  translations['pt-BR'] = pt_br;
-  translations['pt-br'] = pt_br;
-  translations['pt'] = pt_br; // Default Portuguese to Brazil
-
-  //Portuguese (Portugal)
-  translations['pt-PT'] = pt_pt;
-  translations['pt-pt'] = pt_pt;
-
-  //Romanian
-  translations['ro'] = ro_ro;
-  translations['ro-RO'] = ro_ro;
-  translations['ro-MD'] = ro_ro; // Moldova
-
-  //Finnish
-  translations['fi'] = fi_fi;
-  translations['fi-FI'] = fi_fi;
-
-  //Swedish
-  translations['sv'] = sv_se;
-  translations['sv-SE'] = sv_se;
-  translations['sv-FI'] = sv_se; // Finland
-
-  //Vietnamese
-  translations['vi'] = vi_vn;
-  translations['vi-VN'] = vi_vn;
-
-  //Turkish
-  translations['tr'] = tr_tr;
-  translations['tr-TR'] = tr_tr;
-
-  //Russian
-  translations['ru'] = ru_ru;
-  translations['ru-RU'] = ru_ru;
-
-  //Ukrainian
-  translations['uk'] = uk_ua;
-  translations['uk-UA'] = uk_ua;
-
-  //Hindi
-  translations['hi'] = hi_in;
-  translations['hi-IN'] = hi_in;
-
-  //Thai
-  translations['th'] = th_th;
-  translations['th-TH'] = th_th;
-
-  //Korean
-  translations['ko'] = ko_kr;
-  translations['ko-KR'] = ko_kr;
-
-  //Japanese
-  translations['ja'] = ja_jp;
-  translations['ja-JP'] = ja_jp;
-
-  //Chinese (Simplified)
-  translations['zh-CN'] = zh_cn;
-  translations['zh-cn'] = zh_cn;
-  translations['zh'] = zh_cn; // Default Chinese to Simplified
-
-  //Chinese (Hong Kong)
-  translations['zh-HK'] = zh_hk;
-  translations['zh-hk'] = zh_hk;
-
-  //Chinese (Traditional/Taiwan)
-  translations['zh-TW'] = zh_tw;
-  translations['zh-tw'] = zh_tw;
+  var activeLocale = {};
+  function t(key) { return activeLocale[key] || key; }
 
   var translate = function (jsdata) {
     document.querySelectorAll('[tkey]').forEach(function (element) {
       var strTr = jsdata[element.getAttribute('tkey')];
-      element.innerHTML = strTr;
+      if (strTr !== undefined) element.innerHTML = strTr;
     });
   };
 
-  // Initialize with English
-  translate(JSON.parse(translations['en-US']));
-</script>
-<script>
-  function langAware() {
-    var userLang = navigator.language || navigator.userLanguage;
+  function applyTranslations() {
+    // Agent grid — rebuilt with translated strings (defined in game script)
+    buildAgentGrid();
 
-    // Check if translation exists for the exact language code
+    // Pause button — uses t() internally after this task patches updatePauseBtn()
+    updatePauseBtn();
+
+    // HUD labels — each hud-bar child is "LABEL<span>value</span>";
+    // replace the text node (first child) with the translated label
+    var hudScore = document.getElementById('score-val');
+    if (hudScore) hudScore.previousSibling.textContent = t('hud-score');
+    var hudTime = document.getElementById('time-val');
+    if (hudTime) hudTime.previousSibling.textContent = t('hud-time');
+    var hudClues = document.getElementById('clues-val');
+    if (hudClues) hudClues.previousSibling.textContent = t('hud-clues');
+    var hudLives = document.getElementById('lives-val');
+    if (hudLives) hudLives.previousSibling.textContent = t('hud-lives');
+
+    // Poster stats labels — each is "LABEL: <span>value</span>"
+    var posterScore = document.getElementById('poster-score');
+    if (posterScore) posterScore.previousSibling.textContent = t('poster-score-label') + ' ';
+    var posterClues = document.getElementById('poster-clues');
+    if (posterClues) posterClues.previousSibling.textContent = t('poster-clues-label') + ' ';
+
+    // Midgame buttons — preserve FA icon markup, replace text node only
+    var midRestart = document.getElementById('midgame-restart');
+    if (midRestart) midRestart.innerHTML = '&#8635; ' + t('midgame-restart');
+    var midChange = document.getElementById('midgame-change-agent');
+    if (midChange) midChange.innerHTML = '<i class="fa-solid fa-arrow-left"></i> ' + t('midgame-change-agent');
+    var posterChange = document.getElementById('poster-change-agent');
+    if (posterChange) posterChange.innerHTML = '<i class="fa-solid fa-arrow-left"></i> ' + t('choose-agent-btn');
+  }
+
+  function langAware() {
+    var userLang = navigator.language || navigator.userLanguage || 'en-US';
+
     if (!translations[userLang]) {
-      // Try just the base language (e.g., 'de' from 'de-DE')
       var baseLang = userLang.split('-')[0];
       if (translations[baseLang]) {
         userLang = baseLang;
       } else {
-        // Fallback to English if no translation found
         userLang = 'en-US';
       }
     }
 
-    // Parse the translation data
     var jsdata = JSON.parse(translations[userLang]);
+    activeLocale = jsdata;
 
-    // Set the lang attribute on the document for RTL languages
-    var languageCode = jsdata['language-code'];
-    document.documentElement.setAttribute('lang', languageCode);
+    document.documentElement.setAttribute('lang', jsdata['language-code']);
+    document.documentElement.setAttribute('dir', jsdata['language-dir'] || 'ltr');
 
-    // Also set on body for better compatibility
-    document.body.setAttribute('lang', languageCode);
-
-    // Now translate using the appropriate language
-    document.querySelectorAll('[tkey]').forEach(function (element) {
-      var strTr = jsdata[element.getAttribute('tkey')];
-      element.innerHTML = strTr;
-    });
+    translate(jsdata);
+    applyTranslations();
   }
 
-  // Wait for DOM to be ready
+  // langAware() must run after the game script's buildAgentGrid() and
+  // updatePauseBtn() are defined. Both scripts are inline and synchronous,
+  // so DOMContentLoaded always fires after both have been parsed and executed.
+  // The else branch (readyState !== 'loading') is a safety net for dynamic
+  // injection only — it would throw if this script ever ran before the game
+  // script. Keep the translation block before the game script in the file.
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', langAware);
   } else {
     langAware();
   }
 </script>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+const TILE = 40, COLS = 16, ROWS = 10;
+const W = COLS * TILE, H = ROWS * TILE; // logical game resolution (640x400) — never changes
+
+// The canvas backing store is resized to match the *actual displayed*
+// size (times devicePixelRatio) so the game stays crisp whether it's
+// shown at 320px wide on a phone or 1000px wide on a desktop. All game
+// logic and drawing below still uses the fixed logical W x H coordinate
+// space; this just changes how many real pixels each logical pixel maps to.
+function resizeCanvasForDisplay() {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const displayWidth = Math.max(1, Math.round(rect.width * dpr));
+  const displayHeight = Math.max(1, Math.round(rect.height * dpr));
+  if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+    canvas.width = displayWidth;
+    canvas.height = displayHeight;
+  }
+  const scale = rect.width > 0 ? (rect.width / W) * dpr : dpr;
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+}
+
+// Active maze — swapped per agent in resetGame()
+let MAZE = [];
+
+const MAZES = {
+  ghost: [
+    "################",
+    "#..............#",
+    "#.####.##.####.#",
+    "#.#............#",
+    "#.#.#.######.#.#",
+    "#.#.#......#.#.#",
+    "#.#.#.#..#.#.#.#",
+    "#...#.#..#.#...#",
+    "#.###.#..#.###.#",
+    "################",
+  ],
+  gadget: [
+    "################",
+    "#..............#",
+    "#.###.##.#####.#",
+    "#.#.......#....#",
+    "#.#.#####.#..#.#",
+    "#...#.....#....#",
+    "#.#.#.#.#.#.#..#",
+    "#.#...#.....#..#",
+    "#.#####.######.#",
+    "################",
+  ],
+  lk: [
+    "################",
+    "#..............#",
+    "#.##.##.##.###.#",
+    "#.#.......#....#",
+    "#.#.##.###.#.#.#",
+    "#...#.......#..#",
+    "#.###.#.#.#.#..#",
+    "#.#...#.#......#",
+    "#.#.###.####.#.#",
+    "################",
+  ],
+  scout: [
+    "################",
+    "#.....#....#...#",
+    "#.###.#.##.#.#.#",
+    "#.#...#..#...#.#",
+    "#.#.#####.###..#",
+    "#...#.....#....#",
+    "#.###.#.#.#.##.#",
+    "#.#...#.#......#",
+    "#...###.#####..#",
+    "################",
+  ],
+};
+
+function isWall(tx, ty) {
+  if (tx < 0 || ty < 0 || tx >= COLS || ty >= ROWS) return true;
+  return MAZE[ty][tx] === '#';
+}
+
+/* ============================================================
+   AGENT ROSTER
+============================================================ */
+const AGENTS = [
+  {
+    id: 'ghost',
+    tkey: 'agent-ghost',
+    accent: '#1A9E9E',
+    accentDark: '#0E7474',
+    accentLight: '#5ECFCF',
+    badge: 'https://helpimg.s3.us-east-1.amazonaws.com/landing_pages/CSAM/2026/ghost.png',
+  },
+  {
+    id: 'gadget',
+    tkey: 'agent-gadget',
+    accent: '#7C5CBF',
+    accentDark: '#4A3570',
+    accentLight: '#C3AEEA',
+    badge: 'https://helpimg.s3.us-east-1.amazonaws.com/landing_pages/CSAM/2026/gadget.png',
+  },
+  {
+    id: 'lk',
+    tkey: 'agent-lk',
+    accent: '#D64535',
+    accentDark: '#8f2c22',
+    accentLight: '#F0917F',
+    badge: 'https://helpimg.s3.us-east-1.amazonaws.com/landing_pages/CSAM/2026/lock-n-key.png',
+  },
+  {
+    id: 'scout',
+    tkey: 'agent-scout',
+    accent: '#D9A441',
+    accentDark: '#8F6B24',
+    accentLight: '#F3D68C',
+    badge: 'https://helpimg.s3.us-east-1.amazonaws.com/landing_pages/CSAM/2026/scout.png',
+  }
+];
+let selectedAgentIndex = 0;
+
+function hexToRgb(hex) {
+  const m = hex.replace('#', '');
+  const r = parseInt(m.substring(0, 2), 16);
+  const g = parseInt(m.substring(2, 4), 16);
+  const b = parseInt(m.substring(4, 6), 16);
+  return `${r},${g},${b}`;
+}
+
+function applyTheme(agent) {
+  document.documentElement.style.setProperty('--accent', agent.accent);
+  document.documentElement.style.setProperty('--accent-dark', agent.accentDark);
+  document.documentElement.style.setProperty('--accent-light', agent.accentLight);
+  document.documentElement.style.setProperty('--accent-rgb', hexToRgb(agent.accent));
+  document.documentElement.style.setProperty('--accent-light-rgb', hexToRgb(agent.accentLight));
+}
+
+function bannerTextColor(hex) {
+  // Perceived brightness (YIQ): dark ink on light accents (e.g. amber),
+  // cream on the darker ones (teal/violet/red), so the name always reads.
+  const [r, g, b] = hexToRgb(hex).split(',').map(Number);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 150 ? '#141210' : 'var(--cream)';
+}
+
+function buildAgentGrid() {
+  const grid = document.getElementById('agent-grid');
+  grid.innerHTML = '';
+  AGENTS.forEach((agent, i) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'agent-pick';
+    btn.setAttribute('aria-label', 'Play as ' + t(agent.tkey + '-name'));
+    const nameColor = bannerTextColor(agent.accent);
+    btn.innerHTML = `<span class="agent-name" style="background:${agent.accent};color:${nameColor}">${t(agent.tkey + '-name')}</span><img src="${agent.badge}" alt="">`;
+    btn.addEventListener('click', () => {
+      selectAgent(i);
+      if (window.matchMedia('(hover: none), (pointer: coarse), (max-width: 600px)').matches) {
+        setTimeout(startGame, 350);
+      }
+    });
+    btn.addEventListener('focus', () => {
+      if (btn.matches(':focus-visible')) selectAgent(i);
+    });
+    grid.appendChild(btn);
+  });
+  selectAgent(selectedAgentIndex);
+}
+
+function selectAgent(i) {
+  selectedAgentIndex = i;
+  const agent = AGENTS[i];
+  document.querySelectorAll('.agent-pick').forEach((el, idx) => {
+    el.classList.toggle('selected', idx === i);
+  });
+  document.getElementById('agent-preview').innerHTML = `
+    <div class="overlay-title">${t(agent.tkey + '-name')}</div>
+    <div class="overlay-sub">${t(agent.tkey + '-category')}</div>
+    <p class="overlay-motto">"${t(agent.tkey + '-motto')}"</p>
+  `;
+  applyTheme(agent);
+  MAZE = MAZES[agent.id] || MAZES.ghost;
+  if (state !== 'playing') renderIdleFrame();
+}
+
+const screenFrame = document.getElementById('screen-frame');
+const gameArea = document.getElementById('game-area');
+const selectScreen = document.getElementById('select-screen');
+const controlsBar = document.getElementById('controls-bar');
+const posterModal = document.getElementById('poster-modal');
+const posterModalTitle = document.getElementById('poster-modal-title');
+const posterModalImg = document.getElementById('poster-modal-img');
+const posterModalTip = document.getElementById('poster-modal-tip');
+const posterScoreVal = document.getElementById('poster-score');
+const posterCluesVal = document.getElementById('poster-clues');
+const pauseOverlay = document.getElementById('pause-overlay');
+const pauseBtn = document.getElementById('pause-btn');
+const tapHint = document.getElementById('tap-hint');
+let tapHintTimer = null;
+
+function isMobileInput() {
+  return window.matchMedia('(hover: none), (pointer: coarse), (max-width: 600px)').matches;
+}
+
+
+function showTapHint() {
+  if (!isMobileInput()) return;
+  tapHint.classList.add('show');
+  clearTimeout(tapHintTimer);
+  tapHintTimer = setTimeout(hideTapHint, 4000);
+}
+function hideTapHint() {
+  tapHint.classList.remove('show');
+  clearTimeout(tapHintTimer);
+  tapHintTimer = null;
+}
+const scoreVal = document.getElementById('score-val');
+const timeVal = document.getElementById('time-val');
+const cluesVal = document.getElementById('clues-val');
+const livesVal = document.getElementById('lives-val');
+const srStatus = document.getElementById('sr-status');
+
+let state = 'ready'; // ready | playing | gameover
+let paused = false;
+let loopRunning = false;
+let score = 0;
+let lives = 3;
+let timeLeft = 60;
+let cluesFound = 0;
+let lastTime = 0;
+let invuln = 0; // seconds of invulnerability remaining
+let hitPauseTimer = 0;    // counts down while the game is frozen after a hit
+let hitPauseDuration = 0; // the full length of the current hit-pause, for fade math
+let screenShakeMag = 0;   // 0..1, decays over the hit-pause
+let pendingGameOverReason = null; // set when the hit that just happened was the last life
+
+const CLUE_SPOTS = [
+  { tx: 14, ty: 1 },
+  { tx: 7, ty: 3 },
+  { tx: 7, ty: 6 },
+  { tx: 1, ty: 7 },
+  { tx: 14, ty: 7 }
+];
+let clues = [];
+
+function makeEntity(tx, ty, speed) {
+  return { tileX: tx, tileY: ty, dir: { dx: 0, dy: 0 }, nextDir: { dx: 0, dy: 0 }, progress: 0, speed, facing: 'down' };
+}
+
+let player = makeEntity(1, 1, 4.4);
+let threats = [];
+
+function pixelPos(e) {
+  return {
+    x: (e.tileX + e.dir.dx * e.progress) * TILE,
+    y: (e.tileY + e.dir.dy * e.progress) * TILE
+  };
+}
+
+function resetGame() {
+  MAZE = MAZES[AGENTS[selectedAgentIndex].id] || MAZES.ghost;
+  score = 0;
+  lives = 3;
+  timeLeft = 60;
+  cluesFound = 0;
+  invuln = 1.2;
+  hitPauseTimer = 0;
+  hitPauseDuration = 0;
+  screenShakeMag = 0;
+  pendingGameOverReason = null;
+  clues = CLUE_SPOTS.map(c => ({ ...c, taken: false }));
+  player = makeEntity(1, 1, 4.4);
+  threats = [
+    makeEntity(12, 3, 3.3),
+    makeEntity(13, 7, 3.3)
+  ];
+  threats[0].dir = { dx: 1, dy: 0 };
+  threats[1].dir = { dx: -1, dy: 0 };
+  updateHud();
+}
+
+function updateHud() {
+  scoreVal.textContent = Math.floor(score);
+  timeVal.textContent = Math.max(0, Math.ceil(timeLeft));
+  cluesVal.textContent = cluesFound + '/5';
+  livesVal.textContent = '●'.repeat(Math.max(lives, 0)) + '○'.repeat(Math.max(3 - lives, 0));
+}
+
+function updatePauseBtn() {
+  pauseBtn.disabled = state !== 'playing';
+  pauseBtn.innerHTML = paused
+    ? '<i class="fa-solid fa-play"></i><span>' + t('resume-btn') + '</span>'
+    : '<i class="fa-solid fa-pause"></i><span>' + t('pause-btn') + '</span>';
+}
+
+function fadeIn(el) {
+  el.classList.remove('hidden');
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('visible')));
+}
+function fadeOut(el, cb) {
+  if (el.classList.contains('hidden')) {
+    if (cb) cb();
+    return;
+  }
+  el.classList.remove('visible');
+  el.addEventListener('transitionend', function handler() {
+    el.removeEventListener('transitionend', handler);
+    el.classList.add('hidden');
+    if (cb) cb();
+  }, { once: true });
+}
+
+function startGame() {
+  resetGame();
+  state = 'playing';
+  paused = false;
+  posterModal.classList.remove('show');
+  posterModal.setAttribute('aria-hidden', 'true');
+  pauseOverlay.classList.add('hidden');
+  applyTheme(AGENTS[selectedAgentIndex]);
+  const marqueeAgent = document.getElementById('marquee-agent');
+  marqueeAgent.textContent = '— ' + t(AGENTS[selectedAgentIndex].tkey + '-name') + ' —';
+  marqueeAgent.classList.remove('hidden');
+  srStatus.textContent = t('sr-game-started');
+  updatePauseBtn();
+  fadeOut(selectScreen, () => {
+    fadeIn(controlsBar);
+    updatePauseBtn();
+    lastTime = performance.now();
+    showTapHint();
+    gameArea.focus();
+    if (!loopRunning) { loopRunning = true; requestAnimationFrame(loop); }
+  });
+}
+
+function togglePause() {
+  if (state !== 'playing') return;
+  paused = !paused;
+  pauseOverlay.classList.toggle('hidden', !paused);
+  srStatus.textContent = paused ? t('sr-paused') : t('sr-resumed');
+  updatePauseBtn();
+}
+
+function endGame(won, reason) {
+  state = 'gameover';
+  hideTapHint();
+  const agent = AGENTS[selectedAgentIndex];
+
+  posterScoreVal.textContent = Math.floor(score);
+  posterCluesVal.textContent = cluesFound + '/5';
+  posterModalTitle.textContent = won ? t('case-closed') : reason;
+  posterModalTitle.className = 'poster-modal-title ' + (won ? 'win' : 'lose');
+  document.getElementById('poster-modal-agent').textContent = t(agent.tkey + '-name');
+  posterModalImg.src = agent.badge;
+  posterModalImg.alt = t(agent.tkey + '-name') + ' poster';
+  posterModalTip.textContent = t(agent.tkey + '-advice');
+
+  posterModal.classList.add('show');
+  posterModal.setAttribute('aria-hidden', 'false');
+
+  srStatus.textContent = won
+    ? t('case-closed') + '. Score ' + Math.floor(score) + '.'
+    : reason + '. Score ' + Math.floor(score) + '.';
+  updatePauseBtn();
+  // Move focus into the modal so keyboard users land on the primary
+  // action instead of tabbing through the now-inert game behind it.
+  document.getElementById('poster-play-again').focus();
+}
+
+/* ============================================================
+   INPUT
+============================================================ */
+
+const CODE_DIRS = {
+  ArrowUp: { name: 'up', dx: 0, dy: -1 },
+  ArrowDown: { name: 'down', dx: 0, dy: 1 },
+  ArrowLeft: { name: 'left', dx: -1, dy: 0 },
+  ArrowRight: { name: 'right', dx: 1, dy: 0 },
+  KeyW: { name: 'up', dx: 0, dy: -1 },
+  KeyS: { name: 'down', dx: 0, dy: 1 },
+  KeyA: { name: 'left', dx: -1, dy: 0 },
+  KeyD: { name: 'right', dx: 1, dy: 0 }
+};
+// Fallback keyed on the actual character typed (e.key), in case a
+// browser/keyboard layout doesn't report e.code the way we expect.
+const CHAR_DIRS = {
+  w: { name: 'up', dx: 0, dy: -1 },
+  s: { name: 'down', dx: 0, dy: 1 },
+  a: { name: 'left', dx: -1, dy: 0 },
+  d: { name: 'right', dx: 1, dy: 0 },
+  arrowup: { name: 'up', dx: 0, dy: -1 },
+  arrowdown: { name: 'down', dx: 0, dy: 1 },
+  arrowleft: { name: 'left', dx: -1, dy: 0 },
+  arrowright: { name: 'right', dx: 1, dy: 0 }
+};
+function resolveDir(e) {
+  return CODE_DIRS[e.code] || CHAR_DIRS[(e.key || '').toLowerCase()] || null;
+}
+
+document.addEventListener('keydown', (e) => {
+  // If a button is focused, let Space/Enter activate that button
+  // normally (e.g. a focused D-pad arrow, or PRESS START itself)
+  // rather than the global shortcut also firing. The globals below
+  // are for when focus is on the board/body, not on a control.
+  const onButton = document.activeElement && document.activeElement.tagName === 'BUTTON';
+
+  const isSpace = e.code === 'Space' || e.key === ' ';
+  const isEnter = e.code === 'Enter' || e.key === 'Enter';
+
+  if (!onButton) {
+    // Enter starts/restarts from the ready or game-over state, matching
+    // the instinct to just press Enter on a start screen. Space does
+    // the same, and additionally toggles pause during play.
+    if (isEnter && (state === 'ready' || state === 'gameover')) {
+      e.preventDefault();
+      startGame();
+      return;
+    }
+    if (isSpace) {
+      e.preventDefault();
+      if (state === 'ready' || state === 'gameover') startGame();
+      else if (state === 'playing') togglePause();
+      return;
+    }
+  }
+  const d = resolveDir(e);
+  if (d) {
+    e.preventDefault();
+    // Classic Pac-Man movement: pressing a direction locks it in —
+    // the character keeps going that way until a new direction is
+    // pressed or a wall blocks it. No need to hold the key down.
+    // Every input method (keyboard, D-pad, tap-to-move) now sets
+    // player.nextDir directly and shares this same behavior.
+    player.nextDir = { dx: d.dx, dy: d.dy };
+  }
+});
+
+function bindDpad(id, dir) {
+  const btn = document.getElementById(id);
+  const setDir = () => { player.nextDir = { dx: dir.dx, dy: dir.dy }; };
+  // pointerdown gives instant response for touch/mouse. But that alone
+  // ignores keyboard activation, since a focused button fires 'click'
+  // (not pointerdown) on Enter/Space. So we also handle click, guarded
+  // so a real pointer press doesn't fire both.
+  let pointerHandled = false;
+  btn.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    pointerHandled = true;
+    setDir();
+  });
+  btn.addEventListener('click', () => {
+    if (pointerHandled) { pointerHandled = false; return; }
+    setDir(); // keyboard (Enter/Space) path
+  });
+}
+bindDpad('dpad-up', { name: 'up', dx: 0, dy: -1 });
+bindDpad('dpad-down', { name: 'down', dx: 0, dy: 1 });
+bindDpad('dpad-left', { name: 'left', dx: -1, dy: 0 });
+bindDpad('dpad-right', { name: 'right', dx: 1, dy: 0 });
+
+document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('poster-play-again').addEventListener('click', startGame);
+
+// Return to the character-select screen from anywhere (end-game modal
+// or mid-game). Resets state to 'ready' and swaps the game view back
+// out for the select screen.
+function returnToSelect() {
+  posterModal.classList.remove('show');
+  posterModal.setAttribute('aria-hidden', 'true');
+  hideTapHint();
+  document.getElementById('marquee-agent').classList.add('hidden');
+  state = 'ready';
+  paused = false;
+  pauseOverlay.classList.add('hidden');
+  applyTheme(AGENTS[selectedAgentIndex]);
+  updatePauseBtn();
+  controlsBar.classList.remove('visible');
+  renderIdleFrame();
+  fadeIn(selectScreen);
+  focusSelectedAgent();
+}
+
+// Move keyboard focus to the currently-selected agent tile.
+function focusSelectedAgent() {
+  const tiles = document.querySelectorAll('.agent-pick');
+  const tile = tiles[selectedAgentIndex];
+  if (tile) tile.focus({ preventScroll: true });
+}
+
+document.getElementById('poster-change-agent').addEventListener('click', returnToSelect);
+document.getElementById('midgame-change-agent').addEventListener('click', returnToSelect);
+
+// Restart the current agent's run from the beginning, without needing
+// to finish or lose first. startGame() already resets everything, so
+// this just re-invokes it while keeping the same selected agent.
+document.getElementById('midgame-restart').addEventListener('click', () => {
+  if (state === 'playing' || state === 'gameover') startGame();
+});
+
+pauseBtn.addEventListener('click', togglePause);
+pauseOverlay.addEventListener('pointerdown', (e) => {
+  e.stopPropagation();
+  togglePause();
+});
+
+/* Click / tap directly on the maze to steer — same Pac-Man model as
+   every other input method: one click sets a direction (based on
+   where you clicked relative to the character at that instant) and
+   it persists until you click again or hit a wall. No holding or
+   dragging needed. Because the direction is computed once, at the
+   moment of the click, rather than continuously while held, there's
+   no feedback loop with the character's own movement — that
+   instability only showed up in an earlier continuously-recalculated
+   drag version. */
+function dirFromClick(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  if (rect.width === 0) return null;
+  const scale = W / rect.width;
+  const clickX = (clientX - rect.left) * scale;
+  const clickY = (clientY - rect.top) * scale;
+  const pp = pixelPos(player);
+  const px = pp.x + TILE / 2, py = pp.y + TILE / 2;
+  const dx = clickX - px, dy = clickY - py;
+  if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return null; // clicked right on the character — ignore
+  return Math.abs(dx) > Math.abs(dy)
+    ? (dx > 0 ? { dx: 1, dy: 0 } : { dx: -1, dy: 0 })
+    : (dy > 0 ? { dx: 0, dy: 1 } : { dx: 0, dy: -1 });
+}
+
+screenFrame.addEventListener('pointerdown', (e) => {
+  if (state === 'playing' && !paused) {
+    hideTapHint();
+    const dir = dirFromClick(e.clientX, e.clientY);
+    if (dir) player.nextDir = dir;
+  }
+});
+
+// Swipe-to-steer: on touch devices a swipe sets direction from the
+// swipe angle (same Pac-Man lock-in as tap/keyboard). Short taps
+// (< 20px delta) fall through to the pointerdown tap handler above.
+let swipeStart = null;
+screenFrame.addEventListener('touchstart', (e) => {
+  if (state !== 'playing' || paused) return;
+  const t = e.changedTouches[0];
+  swipeStart = { x: t.clientX, y: t.clientY };
+}, { passive: true });
+
+screenFrame.addEventListener('touchmove', (e) => {
+  if (state !== 'playing' || paused || !swipeStart) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - swipeStart.x;
+  const dy = t.clientY - swipeStart.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist < 8) return;
+  e.preventDefault();
+  hideTapHint();
+  const dir = Math.abs(dx) > Math.abs(dy)
+    ? (dx > 0 ? { dx: 1, dy: 0 } : { dx: -1, dy: 0 })
+    : (dy > 0 ? { dx: 0, dy: 1 } : { dx: 0, dy: -1 });
+  player.nextDir = dir;
+  // reset anchor so next move is relative to current finger position
+  swipeStart = { x: t.clientX, y: t.clientY };
+}, { passive: false });
+
+screenFrame.addEventListener('touchend', (e) => {
+  if (state !== 'playing' || paused || !swipeStart) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - swipeStart.x;
+  const dy = t.clientY - swipeStart.y;
+  swipeStart = null;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist < 8) return; // short tap — let pointerdown handle it
+  e.preventDefault();
+  hideTapHint();
+  const dir = Math.abs(dx) > Math.abs(dy)
+    ? (dx > 0 ? { dx: 1, dy: 0 } : { dx: -1, dy: 0 })
+    : (dy > 0 ? { dx: 0, dy: 1 } : { dx: 0, dy: -1 });
+  player.nextDir = dir;
+});
+
+
+/* ============================================================
+   MOVEMENT
+============================================================ */
+function tryAdvance(e, dt) {
+  if (e.dir.dx === 0 && e.dir.dy === 0) return;
+  e.progress += e.speed * dt;
+  if (e.progress >= 1) {
+    e.progress = 0;
+    e.tileX += e.dir.dx;
+    e.tileY += e.dir.dy;
+  }
+}
+
+function updatePlayer(dt) {
+  // at a tile boundary (progress ~0), evaluate direction change
+  if (player.progress === 0) {
+    if (player.nextDir.dx !== 0 || player.nextDir.dy !== 0) {
+      // input is held — try to turn that way; if blocked, keep going
+      // straight (handled by the wall check below) rather than stopping
+      if (!isWall(player.tileX + player.nextDir.dx, player.tileY + player.nextDir.dy)) {
+        player.dir = { ...player.nextDir };
+      }
+    } else {
+      // nothing held at all — stop cleanly here instead of coasting
+      // on whatever direction was last active
+      player.dir = { dx: 0, dy: 0 };
+    }
+    if (isWall(player.tileX + player.dir.dx, player.tileY + player.dir.dy)) {
+      player.dir = { dx: 0, dy: 0 };
+    }
+  }
+  tryAdvance(player, dt);
+}
+
+function updateThreat(t, dt) {
+  if (t.progress === 0) {
+    const opts = [];
+    const dirs = [{ dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 1, dy: 0 }];
+    for (const d of dirs) {
+      if (!isWall(t.tileX + d.dx, t.tileY + d.dy)) {
+        const isReverse = d.dx === -t.dir.dx && d.dy === -t.dir.dy;
+        opts.push({ d, isReverse });
+      }
+    }
+    const forward = opts.filter(o => !o.isReverse);
+    let choice;
+    if (forward.length === 0) {
+      choice = opts[0]; // dead end, must reverse
+    } else {
+      const straight = forward.find(o => o.d.dx === t.dir.dx && o.d.dy === t.dir.dy);
+      if (straight && Math.random() < 0.6) {
+        choice = straight;
+      } else {
+        choice = forward[Math.floor(Math.random() * forward.length)];
+      }
+    }
+    if (choice) t.dir = choice.d;
+  }
+  tryAdvance(t, dt);
+}
+
+/* ============================================================
+   DRAWING
+============================================================ */
+function drawMaze() {
+  const accentRgb = hexToRgb(AGENTS[selectedAgentIndex].accentLight);
+
+  ctx.fillStyle = '#1c1a17';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = `rgba(${accentRgb},0.22)`;
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= COLS; x++) {
+    ctx.beginPath(); ctx.moveTo(x * TILE, 0); ctx.lineTo(x * TILE, H); ctx.stroke();
+  }
+  for (let y = 0; y <= ROWS; y++) {
+    ctx.beginPath(); ctx.moveTo(0, y * TILE); ctx.lineTo(W, y * TILE); ctx.stroke();
+  }
+
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      if (MAZE[y][x] === '#') {
+        ctx.fillStyle = '#3a3632';
+        ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
+        ctx.strokeStyle = `rgba(${accentRgb},0.6)`;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x * TILE + 1, y * TILE + 1, TILE - 2, TILE - 2);
+      }
+    }
+  }
+}
+
+/* ============================================================
+   RETRO PIXEL SPRITES
+   Small color-grid "pixel art" characters, drawn as blocky filled
+   rects rather than smooth vector shapes — aiming for a classic
+   top-down action-adventure feel (think Zelda/Mega Man era sprites).
+============================================================ */
+const SPRITE_PIXEL = 3; // size of one "pixel" block, in canvas units
+
+// 7-wide directional hero sprites, 2-frame walk cycle (idle = narrow
+// stance, walk = wide stance). Palette keys: o=outline h=hood/hair
+// f=face e=eyes t=tunic d=tunic-shade b=boots/belt
+const SPRITE_DOWN_IDLE = [
+  "..ooo..", ".ohhho.", ".ohhho.", "ohhhhho", "ohfffho",
+  "ofefefo", "offfffo", ".ottto.", ".ottto.", ".otdto.",
+  ".obbbo.", "..b.b..", "..o.o..",
+];
+const SPRITE_DOWN_WALK = [
+  "..ooo..", ".ohhho.", ".ohhho.", "ohhhhho", "ohfffho",
+  "ofefefo", "offfffo", ".ottto.", ".ottto.", ".otdto.",
+  ".obbbo.", ".b...b.", "o.....o",
+];
+const SPRITE_UP_IDLE = [
+  "..ooo..", ".ohhho.", ".ohhho.", "ohhhhho", "ohhhhho",
+  "ohhhhho", "ohhhhho", ".ottto.", ".ottto.", ".otdto.",
+  ".obbbo.", "..b.b..", "..o.o..",
+];
+const SPRITE_UP_WALK = [
+  "..ooo..", ".ohhho.", ".ohhho.", "ohhhhho", "ohhhhho",
+  "ohhhhho", "ohhhhho", ".ottto.", ".ottto.", ".otdto.",
+  ".obbbo.", ".b...b.", "o.....o",
+];
+const SPRITE_RIGHT_IDLE = [
+  "..ooo..", ".ohhoo.", ".ohhho.", ".ohhhho", ".ohffho",
+  ".ofeefo", ".offfho", "..ottho", "..ottho", "..otdho",
+  "..obbho", "...bo..", "...oo..",
+];
+const SPRITE_RIGHT_WALK = [
+  "..ooo..", ".ohhoo.", ".ohhho.", ".ohhhho", ".ohffho",
+  ".ofeefo", ".offfho", "..ottho", "..ottho", "..otdho",
+  "..obbho", "..b.o..", "...o...",
+];
+
+// Per-agent threat sprites, each in the same blocky pixel style as
+// the hero, matching that agent's specialty: a phishing envelope for
+// Ghost, a padlock for Lock N Key, a warning triangle for Scout
+// (incident reporting), and a robot for Gadget (AI threats).
+const SPRITE_THREAT_GHOST = [
+  "ooooooooo", "oorrrrroo", "ororrroro", "orrooorro",
+  "orrrrrrro", "orrwrwrro", "orrrrrrro", "ooooooooo",
+];
+const THREAT_PALETTE_GHOST = { o: '#131313', r: '#D64535', w: '#F2ECD8' };
+
+const SPRITE_THREAT_LK = [
+  "..ooooo..", ".o.....o.", "o.......o", "o.......o",
+  "ooooooooo", "orrrrrrro", "orr.k.rro", "orr.k.rro", "ooooooooo",
+];
+const THREAT_PALETTE_LK = { o: '#cfcfd6', r: '#D64535', k: '#3c140f' };
+
+const SPRITE_THREAT_SCOUT = [
+  "....o....", "...oao...", "..oaoao..", ".oaaoaao.",
+  "oaaaoaaao", "oaaaoaaao", "oaaaaaaao", "oaaaoaaao", "ooooooooo",
+];
+const THREAT_PALETTE_SCOUT = { o: '#131313', a: '#D9A441' };
+
+const SPRITE_THREAT_GADGET = [
+  ".o.o.o.o.", "ooooooooo", "opppppppo", "op.e.e.po",
+  "opppppppo", "opaoaoapo", "opppppppo", "ooooooooo",
+];
+const THREAT_PALETTE_GADGET = { o: '#cfcfd6', p: '#7C5CBF', e: '#F2ECD8', a: '#30205a' };
+
+const THREAT_SPRITES = {
+  ghost: { grid: SPRITE_THREAT_GHOST, palette: THREAT_PALETTE_GHOST },
+  lk: { grid: SPRITE_THREAT_LK, palette: THREAT_PALETTE_LK },
+  scout: { grid: SPRITE_THREAT_SCOUT, palette: THREAT_PALETTE_SCOUT },
+  gadget: { grid: SPRITE_THREAT_GADGET, palette: THREAT_PALETTE_GADGET },
+};
+
+const SPRITE_CLUE = [
+  "..ooooo..", ".oaaaaoo.", "obbbbbbbo", "obbbbbbbo",
+  "obbbbbbbo", "obbbbbbbo", "oooooooo.",
+];
+const CLUE_PALETTE = { o: '#131313', a: '#C4AF7C', b: '#D8C79A' };
+
+function spritePalette(agent) {
+  return {
+    o: '#131313',
+    h: '#847b70',
+    f: '#F2ECD8',
+    e: agent.id === 'lk' ? agent.accent : '#131313',
+    t: agent.accent,
+    d: agent.accentDark,
+    b: '#5c5650',
+  };
+}
+
+// Draws a pixel grid anchored by its bottom-center point (footX,
+// footY) — the natural anchor for a standing character, since it
+// keeps feet planted at a consistent spot regardless of sprite
+// height. flip mirrors horizontally (used to get "left" from the
+// "right" sprite instead of drawing a whole separate grid).
+function drawPixelSprite(grid, palette, footX, footY, pixelSize, flip) {
+  const rows = grid.length;
+  const cols = grid[0].length;
+  const w = cols * pixelSize;
+  const h = rows * pixelSize;
+  const originX = footX - w / 2;
+  const originY = footY - h;
+  ctx.save();
+  if (flip) {
+    ctx.translate(footX, 0);
+    ctx.scale(-1, 1);
+    ctx.translate(-footX, 0);
+  }
+  for (let ry = 0; ry < rows; ry++) {
+    const row = grid[ry];
+    for (let rx = 0; rx < cols; rx++) {
+      const ch = row[rx];
+      if (ch === '.') continue;
+      const color = palette[ch];
+      if (!color) continue;
+      ctx.fillStyle = color;
+      ctx.fillRect(
+        Math.round(originX + rx * pixelSize),
+        Math.round(originY + ry * pixelSize),
+        pixelSize,
+        pixelSize
+      );
+    }
+  }
+  ctx.restore();
+}
+
+// Same as above but anchored by its true center — the right anchor
+// for small item/enemy icons that just sit in the middle of a tile
+// rather than "standing" on it.
+function drawPixelSpriteCentered(grid, palette, cx, cy, pixelSize, flip) {
+  const h = grid.length * pixelSize;
+  drawPixelSprite(grid, palette, cx, cy + h / 2, pixelSize, flip);
+}
+
+function drawClue(c) {
+  if (c.taken) return;
+  const cx = c.tx * TILE + TILE / 2, cy = c.ty * TILE + TILE / 2;
+  const glow = 0.7 + Math.sin(performance.now() / 300 + c.tx) * 0.3;
+  ctx.save();
+  ctx.shadowColor = AGENTS[selectedAgentIndex].accentLight;
+  ctx.shadowBlur = 8 * glow;
+  drawPixelSpriteCentered(SPRITE_CLUE, CLUE_PALETTE, cx, cy, SPRITE_PIXEL, false);
+  ctx.restore();
+}
+
+function drawThreat(t) {
+  const p = pixelPos(t);
+  const cx = p.x + TILE / 2, cy = p.y + TILE / 2;
+  const sprite = THREAT_SPRITES[AGENTS[selectedAgentIndex].id] || THREAT_SPRITES.ghost;
+  drawPixelSpriteCentered(sprite.grid, sprite.palette, cx, cy, SPRITE_PIXEL, false);
+}
+
+function drawPlayer() {
+  const agent = AGENTS[selectedAgentIndex];
+  const p = pixelPos(player);
+  const footX = p.x + TILE / 2;
+  const footY = p.y + TILE - 2;
+  const dimmed = invuln > 0 && Math.floor(invuln * 8) % 2 === 0;
+
+  // Track which way the sprite should face — keep the last direction
+  // moved when standing still, rather than snapping back to a
+  // default pose.
+  if (player.dir.dx > 0) player.facing = 'right';
+  else if (player.dir.dx < 0) player.facing = 'left';
+  else if (player.dir.dy > 0) player.facing = 'down';
+  else if (player.dir.dy < 0) player.facing = 'up';
+  if (!player.facing) player.facing = 'down';
+
+  const moving = player.dir.dx !== 0 || player.dir.dy !== 0;
+  const walkFrame = moving && Math.floor(performance.now() / 220) % 2 === 1;
+
+  let grid, flip = false;
+  if (player.facing === 'up') {
+    grid = walkFrame ? SPRITE_UP_WALK : SPRITE_UP_IDLE;
+  } else if (player.facing === 'left') {
+    grid = walkFrame ? SPRITE_RIGHT_WALK : SPRITE_RIGHT_IDLE;
+    flip = true;
+  } else if (player.facing === 'right') {
+    grid = walkFrame ? SPRITE_RIGHT_WALK : SPRITE_RIGHT_IDLE;
+  } else {
+    grid = walkFrame ? SPRITE_DOWN_WALK : SPRITE_DOWN_IDLE;
+  }
+
+  ctx.save();
+  if (dimmed) ctx.globalAlpha = 0.35;
+  drawPixelSprite(grid, spritePalette(agent), footX, footY, SPRITE_PIXEL, flip);
+  ctx.restore();
+}
+
+/* ============================================================
+   LOOP
+============================================================ */
+function loop(ts) {
+  const dt = Math.min((ts - lastTime) / 1000, 0.05);
+  lastTime = ts;
+
+  if (state === 'playing' && !paused) update(dt);
+
+  resizeCanvasForDisplay();
+
+  // Screen shake: a small random jitter that decays as screenShakeMag
+  // falls from 1 to 0 over the hit-pause. Composes on top of the base
+  // transform resizeCanvasForDisplay() just set, and gets reset clean
+  // again next frame, so nothing needs to be manually undone here.
+  if (screenShakeMag > 0) {
+    const amount = screenShakeMag * 6;
+    ctx.translate((Math.random() - 0.5) * 2 * amount, (Math.random() - 0.5) * 2 * amount);
+  }
+
+  drawMaze();
+  clues.forEach(drawClue);
+  threats.forEach(drawThreat);
+  drawPlayer();
+
+  // Fading red flash while the hit-pause plays out
+  if (hitPauseTimer > 0 && hitPauseDuration > 0) {
+    const flashAlpha = (hitPauseTimer / hitPauseDuration) * 0.45;
+    ctx.fillStyle = `rgba(214, 69, 53, ${flashAlpha})`;
+    ctx.fillRect(-20, -20, W + 40, H + 40);
+  }
+
+  if (state === 'playing') requestAnimationFrame(loop);
+  else loopRunning = false;
+}
+
+function update(dt) {
+  // Frozen beat after getting hit — nothing moves, timer doesn't tick,
+  // just the shake/flash playing out — so the hit actually reads as
+  // an event instead of an instant, easy-to-miss teleport.
+  if (hitPauseTimer > 0) {
+    hitPauseTimer -= dt;
+    screenShakeMag = Math.max(0, hitPauseTimer / hitPauseDuration);
+    if (hitPauseTimer <= 0) {
+      screenShakeMag = 0;
+      if (pendingGameOverReason) {
+        const reason = pendingGameOverReason;
+        pendingGameOverReason = null;
+        endGame(false, reason);
+        return;
+      }
+      // pause is over — now actually respawn back at the start
+      player.tileX = 1; player.tileY = 1; player.progress = 0;
+      player.dir = { dx: 0, dy: 0 }; player.nextDir = { dx: 0, dy: 0 };
+    }
+    return;
+  }
+
+  timeLeft -= dt;
+  if (invuln > 0) invuln -= dt;
+
+  updatePlayer(dt);
+  threats.forEach(threat => updateThreat(threat, dt));
+
+  const pp = pixelPos(player);
+  const pcx = pp.x + TILE / 2, pcy = pp.y + TILE / 2;
+
+  clues.forEach(c => {
+    if (c.taken) return;
+    const ccx = c.tx * TILE + TILE / 2, ccy = c.ty * TILE + TILE / 2;
+    const dist = Math.hypot(pcx - ccx, pcy - ccy);
+    if (dist < TILE * 0.4) {
+      c.taken = true;
+      cluesFound++;
+      score += 100;
+    }
+  });
+
+  if (invuln <= 0) {
+    for (const threat of threats) {
+      const tp = pixelPos(threat);
+      const tcx = tp.x + TILE / 2, tcy = tp.y + TILE / 2;
+      const dist = Math.hypot(pcx - tcx, pcy - tcy);
+      if (dist < TILE * 0.55) {
+        lives--;
+        invuln = 1.5;
+        hitPauseDuration = 0.55;
+        hitPauseTimer = hitPauseDuration;
+        screenShakeMag = 1;
+        pendingGameOverReason = lives <= 0 ? t('caught') : null;
+        updateHud();
+        return;
+      }
+    }
+  }
+
+  updateHud();
+
+  if (cluesFound >= CLUE_SPOTS.length) {
+    score += Math.max(0, Math.floor(timeLeft)) * 5;
+    updateHud();
+    endGame(true, '');
+    return;
+  }
+  if (timeLeft <= 0) {
+    endGame(false, t('times-up'));
+    return;
+  }
+}
+
+/* initial idle render */
+buildAgentGrid();
+resetGame();
+updatePauseBtn();
+gameArea.classList.add('visible');
+selectScreen.classList.add('visible');
+// controls-bar stays in layout from the start (no hidden class) so it
+// reserves its height — but invisible until the game begins
+function renderIdleFrame() {
+  resizeCanvasForDisplay();
+  drawMaze();
+  clues.forEach(drawClue);
+  threats.forEach(drawThreat);
+  drawPlayer();
+}
+renderIdleFrame();
+
+// Focus the currently-selected agent tile (Ghost by default) on first
+// load, matching the behavior when returning via "change agent": it
+// gives keyboard users a focus anchor on the select screen, and the
+// next Tab moves to the following agent. Enter still starts the game
+// from a focused tile, and the global Enter/Space shortcuts also start
+// it regardless of which element is focused.
+focusSelectedAgent();
+
+window.addEventListener('resize', () => {
+  if (state === 'playing') resizeCanvasForDisplay();
+  else renderIdleFrame();
+});
+
+</script>
+</body>
+</html>
