@@ -227,10 +227,10 @@ canvas {
   z-index: 2;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
   justify-content: flex-start;
   text-align: center;
-  padding-block: clamp(1.5rem, 4vw, 3rem);
+  padding-block: clamp(1.5rem, 4vw, 3.5rem);
   padding-inline: clamp(0.8rem, 3vw, 1.6rem);
   background: #060505;
   overflow-y: auto;
@@ -369,12 +369,13 @@ canvas {
 
 .select-bottom {
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  align-content: center;
   align-items: center;
-  justify-content: center;
   width: 100%;
-  gap: clamp(2rem, 5vw, 4rem);
+  min-width: 0;
+  gap: clamp(2.5rem, 6vw, 5rem);
 }
 .select-top-group {
   display: flex;
@@ -382,12 +383,13 @@ canvas {
   align-items: center;
   gap: clamp(1.2rem, 3vw, 2rem);
   width: 100%;
+  min-width: 0;
 }
-.select-detail-group {
+.select-agent-info {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(0.7rem, 1.8vw, 1.2rem);
+  justify-content: center;
   width: 100%;
 }
 
@@ -396,7 +398,7 @@ canvas {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.5em;
+  gap: 0.25em;
   overflow: hidden;
 }
 .agent-preview .overlay-title {
@@ -435,6 +437,9 @@ canvas {
   line-height: 1.7;
   opacity: 0.9;
 }
+.select-instructions {
+  font-size: clamp(0.9rem, 1.8vw, 1.25rem);
+}
 
 .overlay-score {
   font-family: 'Press Start 2P', monospace;
@@ -464,6 +469,7 @@ canvas {
   cursor: pointer;
   box-shadow: 0 4px 0 #8f2c22;
   margin-top: 0.3em;
+  justify-self: center;
   animation: blink 1.4s steps(1) infinite;
 }
 .arcade-btn { transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease; }
@@ -830,11 +836,11 @@ canvas {
         <p class="overlay-controls touch-only" style="font-size: clamp(0.9rem, 3.5vw, 1.3rem); font-weight: bold;" tkey="tap-to-begin">&nbsp;</p>
         <div class="agent-grid" id="agent-grid"></div>
       </div>
-      <div class="select-detail-group">
+      <div class="select-agent-info">
         <div class="agent-preview" id="agent-preview"></div>
-        <p class="overlay-instructions" tkey="overlay-instructions-select">&nbsp;</p>
-        <button class="arcade-btn kb-only" id="start-btn" type="button" tkey="press-start">&nbsp;</button>
       </div>
+      <p class="overlay-instructions select-instructions" tkey="overlay-instructions-select">&nbsp;</p>
+      <button class="arcade-btn kb-only" id="start-btn" type="button" tkey="press-start">&nbsp;</button>
     </div>
   </div>
   </div><!-- /.game-container -->
