@@ -1044,6 +1044,7 @@ const srStatus = document.getElementById('sr-status');
 
 let state = 'ready'; // ready | playing | gameover
 let paused = false;
+let loopRunning = false;
 let score = 0;
 let lives = 3;
 let timeLeft = 60;
@@ -1119,6 +1120,10 @@ function fadeIn(el) {
   requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('visible')));
 }
 function fadeOut(el, cb) {
+  if (el.classList.contains('hidden')) {
+    if (cb) cb();
+    return;
+  }
   el.classList.remove('visible');
   el.addEventListener('transitionend', function handler() {
     el.removeEventListener('transitionend', handler);
@@ -1146,7 +1151,7 @@ function startGame() {
     lastTime = performance.now();
     showTapHint();
     gameArea.focus();
-    requestAnimationFrame(loop);
+    if (!loopRunning) { loopRunning = true; requestAnimationFrame(loop); }
   });
 }
 
@@ -1716,6 +1721,7 @@ function loop(ts) {
   }
 
   if (state === 'playing') requestAnimationFrame(loop);
+  else loopRunning = false;
 }
 
 function update(dt) {
