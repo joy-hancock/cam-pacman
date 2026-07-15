@@ -227,13 +227,14 @@ canvas {
   z-index: 2;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   justify-content: flex-start;
-  gap: clamp(0.5rem, 1.5vw, 0.9rem);
   text-align: center;
-  padding: clamp(1.2rem, 3vw, 2rem) clamp(0.8rem, 3vw, 1.6rem);
+  padding-block: clamp(1.5rem, 4vw, 3rem);
+  padding-inline: clamp(0.8rem, 3vw, 1.6rem);
   background: #060505;
   overflow-y: auto;
+  justify-content: flex-start;
 }
 
 /* Show the right hint for the right input method instead of always
@@ -259,7 +260,7 @@ canvas {
   .agent-preview { display: none; }
   .select-screen .touch-only.move-hint { display: none; }
   /* Cap card image height so 4 cards fit without scrolling */
-  .agent-pick img { max-height: 28vw; object-fit: cover; object-position: top; }
+  .agent-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* Tap-to-play tutorial: a bouncing hand + expanding ripple shown
@@ -366,18 +367,40 @@ canvas {
   pointer-events: none;
 }
 
-.agent-preview {
-  height: 7rem;
+.select-bottom {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  gap: 0.25em;
+  justify-content: center;
+  width: 100%;
+  gap: clamp(2rem, 5vw, 4rem);
+}
+.select-top-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(1.2rem, 3vw, 2rem);
+  width: 100%;
+}
+.select-detail-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.7rem, 1.8vw, 1.2rem);
+  width: 100%;
+}
+
+.agent-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
   overflow: hidden;
-  margin-top: 0.6em;
 }
 .agent-preview .overlay-title {
-  font-size: clamp(0.8rem, 1.8vw, 1.1rem);
+  font-size: clamp(1rem, 2.2vw, 1.4rem);
   white-space: nowrap;
 }
 
@@ -401,9 +424,10 @@ canvas {
   font-family: 'Special Elite', monospace;
   font-style: italic;
   font-size: clamp(0.8rem, 1.6vw, 1.15rem);
-  max-width: 32ch;
+  max-width: 60ch;
   opacity: 0.9;
   line-height: 1.4;
+  text-wrap: balance;
 }
 
 .overlay-instructions {
@@ -800,14 +824,18 @@ canvas {
   </div>
 
   <div class="select-screen screen-fade" id="select-screen">
-    <div class="select-title kb-only" tkey="select-title">&nbsp;</div>
-    <p class="overlay-controls touch-only" style="font-size: clamp(0.9rem, 3.5vw, 1.3rem); font-weight: bold; padding: 1.2em 0 0.4em;" tkey="tap-to-begin">&nbsp;</p>
-    <div class="agent-grid" id="agent-grid"></div>
-    <div class="agent-preview" id="agent-preview"></div>
-    <p class="overlay-instructions" style="margin-top: 0.2em; margin-bottom: 0.8em;" tkey="overlay-instructions-select">&nbsp;</p>
-    <button class="arcade-btn kb-only" id="start-btn" type="button" tkey="press-start">&nbsp;</button>
-    <p class="overlay-controls kb-only" tkey="select-controls-kb">&nbsp;</p>
-    <p class="overlay-controls touch-only move-hint" tkey="select-controls-touch">&nbsp;</p>
+    <div class="select-bottom">
+      <div class="select-top-group">
+        <div class="select-title kb-only" tkey="select-title">&nbsp;</div>
+        <p class="overlay-controls touch-only" style="font-size: clamp(0.9rem, 3.5vw, 1.3rem); font-weight: bold;" tkey="tap-to-begin">&nbsp;</p>
+        <div class="agent-grid" id="agent-grid"></div>
+      </div>
+      <div class="select-detail-group">
+        <div class="agent-preview" id="agent-preview"></div>
+        <p class="overlay-instructions" tkey="overlay-instructions-select">&nbsp;</p>
+        <button class="arcade-btn kb-only" id="start-btn" type="button" tkey="press-start">&nbsp;</button>
+      </div>
+    </div>
   </div>
   </div><!-- /.game-container -->
 
@@ -846,8 +874,6 @@ canvas {
     "tap-to-begin": "TAP AN AGENT TO BEGIN",\
     "overlay-instructions-select": "FIND ALL 5 CASE FILES.<br>AVOID PATROLLING THREATS.<br>BEAT THE CLOCK.",\
     "press-start": "PRESS START",\
-    "select-controls-kb": "[ ARROWS / WASD — OR D-PAD ]<br>[ SPACE TO PAUSE ]",\
-    "select-controls-touch": "[ SWIPE OR TAP TO MOVE ]<br>[ USE THE PAUSE BUTTON TO PAUSE ]",\
     "pause-overlay-title": "PAUSED",\
     "overlay-instructions-pause": "TIME AND THREATS ARE FROZEN.",\
     "pause-controls-kb": "[ SPACE / TAP TO RESUME ]",\
@@ -869,7 +895,7 @@ canvas {
     "times-up": "TIME\'S UP",\
     "play-again-btn": "PLAY AGAIN",\
     "choose-agent-btn": "CHOOSE A DIFFERENT AGENT",\
-    "cabinet-footer": "CYBERSECURITY AWARENESS MONTH 2026 · ARCADE PROTOTYPE",\
+    "cabinet-footer": "CYBERSECURITY AWARENESS MONTH 2026",\
     "agent-ghost-name": "THE GHOST",\
     "agent-ghost-category": "PHISHING / SOCIAL ENGINEERING",\
     "agent-ghost-motto": "Trust, but verify... then verify again.",\
@@ -907,8 +933,6 @@ canvas {
     "tap-to-begin": "Test",\
     "overlay-instructions-select": "Test",\
     "press-start": "Test",\
-    "select-controls-kb": "Test",\
-    "select-controls-touch": "Test",\
     "pause-overlay-title": "Test",\
     "overlay-instructions-pause": "Test",\
     "pause-controls-kb": "Test",\
@@ -930,7 +954,7 @@ canvas {
     "times-up": "Test",\
     "play-again-btn": "Test",\
     "choose-agent-btn": "Test",\
-    "cabinet-footer": "Test",\
+    "cabinet-footer": "CYBERSECURITY AWARENESS MONTH 2026",\
     "agent-ghost-name": "Test",\
     "agent-ghost-category": "Test",\
     "agent-ghost-motto": "Test",\
